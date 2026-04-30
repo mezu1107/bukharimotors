@@ -56,7 +56,8 @@ function NewBooking() {
     }
     setSaving(true);
     const sigData = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : null;
-    const { data, error } = await supabase.from("bookings").insert({
+    const { data, error } = await supabase.from("bookings").insert([{
+      booking_no: "",
       client_id: form.client_id,
       vehicle_id: form.vehicle_id,
       pickup_at: new Date(form.pickup_at).toISOString(),
@@ -72,7 +73,7 @@ function NewBooking() {
       signature_url: sigData,
       terms_accepted: true,
       status: "confirmed",
-    }).select("booking_no").single();
+    }]).select("booking_no").single();
     setSaving(false);
     if (error || !data) { toast.error(error?.message ?? "Failed"); return; }
     toast.success(`Booking ${data.booking_no} created`);

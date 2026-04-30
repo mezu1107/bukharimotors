@@ -16,6 +16,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVehiclesRouteImport } from './routes/_app/vehicles'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app/clients'
+import { Route as AppBookingsRouteImport } from './routes/_app/bookings'
+import { Route as AppBookingsNewRouteImport } from './routes/_app/bookings/new'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -51,22 +53,36 @@ const AppClientsRoute = AppClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBookingsRoute = AppBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBookingsNewRoute = AppBookingsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppBookingsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/bookings': typeof AppBookingsRouteWithChildren
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
   '/vehicles': typeof AppVehiclesRoute
+  '/bookings/new': typeof AppBookingsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/bookings': typeof AppBookingsRouteWithChildren
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
   '/vehicles': typeof AppVehiclesRoute
+  '/bookings/new': typeof AppBookingsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -74,9 +90,11 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_app/bookings': typeof AppBookingsRouteWithChildren
   '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/vehicles': typeof AppVehiclesRoute
+  '/_app/bookings/new': typeof AppBookingsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -84,20 +102,32 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/bookings'
     | '/clients'
     | '/dashboard'
     | '/vehicles'
+    | '/bookings/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/clients' | '/dashboard' | '/vehicles'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/bookings'
+    | '/clients'
+    | '/dashboard'
+    | '/vehicles'
+    | '/bookings/new'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/login'
     | '/signup'
+    | '/_app/bookings'
     | '/_app/clients'
     | '/_app/dashboard'
     | '/_app/vehicles'
+    | '/_app/bookings/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,16 +188,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/bookings': {
+      id: '/_app/bookings'
+      path: '/bookings'
+      fullPath: '/bookings'
+      preLoaderRoute: typeof AppBookingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/bookings/new': {
+      id: '/_app/bookings/new'
+      path: '/new'
+      fullPath: '/bookings/new'
+      preLoaderRoute: typeof AppBookingsNewRouteImport
+      parentRoute: typeof AppBookingsRoute
+    }
   }
 }
 
+interface AppBookingsRouteChildren {
+  AppBookingsNewRoute: typeof AppBookingsNewRoute
+}
+
+const AppBookingsRouteChildren: AppBookingsRouteChildren = {
+  AppBookingsNewRoute: AppBookingsNewRoute,
+}
+
+const AppBookingsRouteWithChildren = AppBookingsRoute._addFileChildren(
+  AppBookingsRouteChildren,
+)
+
 interface AppRouteChildren {
+  AppBookingsRoute: typeof AppBookingsRouteWithChildren
   AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppVehiclesRoute: typeof AppVehiclesRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppBookingsRoute: AppBookingsRouteWithChildren,
   AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppVehiclesRoute: AppVehiclesRoute,
