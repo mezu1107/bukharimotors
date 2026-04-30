@@ -1,26 +1,30 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth-context";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: IndexRedirect,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function IndexRedirect() {
+  const { user, loading } = useAuth();
+  useEffect(() => {
+    if (loading) return;
+    if (user) {
+      window.location.replace("/dashboard");
+    } else {
+      window.location.replace("/login");
+    }
+  }, [user, loading]);
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
+      <div className="text-center">
+        <div className="text-4xl font-bold text-gold-gradient mb-2">BUKHARI MOTORS</div>
+        <div className="text-sm text-white/70">Loading…</div>
+      </div>
     </div>
   );
 }
 
-function Index() {
-  return <PlaceholderIndex />;
-}
+// silence unused
+void redirect;
