@@ -140,18 +140,19 @@ function AppShell() {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 glass-strong border-b border-border/50 px-4 py-3 flex items-center gap-3">
+        <header className="sticky top-0 z-30 glass-strong border-b border-border px-4 py-3 flex items-center gap-3">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)}>
             <Menu className="size-5" />
           </Button>
+          <img src={logo} alt="" className="size-8 rounded-lg object-cover lg:hidden" />
           <div className="flex-1 min-w-0">
             <div className="text-xs text-muted-foreground">Bukhari Motors</div>
-            <div className="text-sm font-semibold truncate capitalize">
+            <div className="text-sm font-display font-semibold truncate capitalize">
               {path.split("/").filter(Boolean).slice(-1)[0] ?? "Dashboard"}
             </div>
           </div>
           <Link to="/bookings/new">
-            <Button size="sm" className="bg-gradient-primary shadow-elegant">
+            <Button size="sm" className="bg-gradient-cta text-cta-foreground shadow-gold hover:opacity-90">
               <FileText className="size-4 mr-1.5" /> New Booking
             </Button>
           </Link>
