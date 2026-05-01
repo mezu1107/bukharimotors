@@ -14,8 +14,17 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVehiclesRouteImport } from './routes/_app/vehicles'
+import { Route as AppTemplatesRouteImport } from './routes/_app/templates'
+import { Route as AppReportsRouteImport } from './routes/_app/reports'
+import { Route as AppRemindersRouteImport } from './routes/_app/reminders'
+import { Route as AppPromotionsRouteImport } from './routes/_app/promotions'
+import { Route as AppPaymentsRouteImport } from './routes/_app/payments'
+import { Route as AppMaintenanceRouteImport } from './routes/_app/maintenance'
+import { Route as AppInspectionsRouteImport } from './routes/_app/inspections'
+import { Route as AppDriversRouteImport } from './routes/_app/drivers'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app/clients'
+import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppBookingsRouteImport } from './routes/_app/bookings'
 import { Route as AppBookingsNewRouteImport } from './routes/_app/bookings/new'
 
@@ -43,6 +52,46 @@ const AppVehiclesRoute = AppVehiclesRouteImport.update({
   path: '/vehicles',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTemplatesRoute = AppTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRemindersRoute = AppRemindersRouteImport.update({
+  id: '/reminders',
+  path: '/reminders',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPromotionsRoute = AppPromotionsRouteImport.update({
+  id: '/promotions',
+  path: '/promotions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPaymentsRoute = AppPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMaintenanceRoute = AppMaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInspectionsRoute = AppInspectionsRouteImport.update({
+  id: '/inspections',
+  path: '/inspections',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDriversRoute = AppDriversRouteImport.update({
+  id: '/drivers',
+  path: '/drivers',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -51,6 +100,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
 const AppClientsRoute = AppClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCalendarRoute = AppCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBookingsRoute = AppBookingsRouteImport.update({
@@ -69,8 +123,17 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/bookings': typeof AppBookingsRouteWithChildren
+  '/calendar': typeof AppCalendarRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/drivers': typeof AppDriversRoute
+  '/inspections': typeof AppInspectionsRoute
+  '/maintenance': typeof AppMaintenanceRoute
+  '/payments': typeof AppPaymentsRoute
+  '/promotions': typeof AppPromotionsRoute
+  '/reminders': typeof AppRemindersRoute
+  '/reports': typeof AppReportsRoute
+  '/templates': typeof AppTemplatesRoute
   '/vehicles': typeof AppVehiclesRoute
   '/bookings/new': typeof AppBookingsNewRoute
 }
@@ -79,8 +142,17 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/bookings': typeof AppBookingsRouteWithChildren
+  '/calendar': typeof AppCalendarRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/drivers': typeof AppDriversRoute
+  '/inspections': typeof AppInspectionsRoute
+  '/maintenance': typeof AppMaintenanceRoute
+  '/payments': typeof AppPaymentsRoute
+  '/promotions': typeof AppPromotionsRoute
+  '/reminders': typeof AppRemindersRoute
+  '/reports': typeof AppReportsRoute
+  '/templates': typeof AppTemplatesRoute
   '/vehicles': typeof AppVehiclesRoute
   '/bookings/new': typeof AppBookingsNewRoute
 }
@@ -91,8 +163,17 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_app/bookings': typeof AppBookingsRouteWithChildren
+  '/_app/calendar': typeof AppCalendarRoute
   '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/drivers': typeof AppDriversRoute
+  '/_app/inspections': typeof AppInspectionsRoute
+  '/_app/maintenance': typeof AppMaintenanceRoute
+  '/_app/payments': typeof AppPaymentsRoute
+  '/_app/promotions': typeof AppPromotionsRoute
+  '/_app/reminders': typeof AppRemindersRoute
+  '/_app/reports': typeof AppReportsRoute
+  '/_app/templates': typeof AppTemplatesRoute
   '/_app/vehicles': typeof AppVehiclesRoute
   '/_app/bookings/new': typeof AppBookingsNewRoute
 }
@@ -103,8 +184,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/bookings'
+    | '/calendar'
     | '/clients'
     | '/dashboard'
+    | '/drivers'
+    | '/inspections'
+    | '/maintenance'
+    | '/payments'
+    | '/promotions'
+    | '/reminders'
+    | '/reports'
+    | '/templates'
     | '/vehicles'
     | '/bookings/new'
   fileRoutesByTo: FileRoutesByTo
@@ -113,8 +203,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/bookings'
+    | '/calendar'
     | '/clients'
     | '/dashboard'
+    | '/drivers'
+    | '/inspections'
+    | '/maintenance'
+    | '/payments'
+    | '/promotions'
+    | '/reminders'
+    | '/reports'
+    | '/templates'
     | '/vehicles'
     | '/bookings/new'
   id:
@@ -124,8 +223,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_app/bookings'
+    | '/_app/calendar'
     | '/_app/clients'
     | '/_app/dashboard'
+    | '/_app/drivers'
+    | '/_app/inspections'
+    | '/_app/maintenance'
+    | '/_app/payments'
+    | '/_app/promotions'
+    | '/_app/reminders'
+    | '/_app/reports'
+    | '/_app/templates'
     | '/_app/vehicles'
     | '/_app/bookings/new'
   fileRoutesById: FileRoutesById
@@ -174,6 +282,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVehiclesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/templates': {
+      id: '/_app/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof AppTemplatesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reports': {
+      id: '/_app/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reminders': {
+      id: '/_app/reminders'
+      path: '/reminders'
+      fullPath: '/reminders'
+      preLoaderRoute: typeof AppRemindersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/promotions': {
+      id: '/_app/promotions'
+      path: '/promotions'
+      fullPath: '/promotions'
+      preLoaderRoute: typeof AppPromotionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/payments': {
+      id: '/_app/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof AppPaymentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/maintenance': {
+      id: '/_app/maintenance'
+      path: '/maintenance'
+      fullPath: '/maintenance'
+      preLoaderRoute: typeof AppMaintenanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/inspections': {
+      id: '/_app/inspections'
+      path: '/inspections'
+      fullPath: '/inspections'
+      preLoaderRoute: typeof AppInspectionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/drivers': {
+      id: '/_app/drivers'
+      path: '/drivers'
+      fullPath: '/drivers'
+      preLoaderRoute: typeof AppDriversRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -186,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/clients'
       preLoaderRoute: typeof AppClientsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/calendar': {
+      id: '/_app/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AppCalendarRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/bookings': {
@@ -219,15 +390,33 @@ const AppBookingsRouteWithChildren = AppBookingsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppBookingsRoute: typeof AppBookingsRouteWithChildren
+  AppCalendarRoute: typeof AppCalendarRoute
   AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDriversRoute: typeof AppDriversRoute
+  AppInspectionsRoute: typeof AppInspectionsRoute
+  AppMaintenanceRoute: typeof AppMaintenanceRoute
+  AppPaymentsRoute: typeof AppPaymentsRoute
+  AppPromotionsRoute: typeof AppPromotionsRoute
+  AppRemindersRoute: typeof AppRemindersRoute
+  AppReportsRoute: typeof AppReportsRoute
+  AppTemplatesRoute: typeof AppTemplatesRoute
   AppVehiclesRoute: typeof AppVehiclesRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppBookingsRoute: AppBookingsRouteWithChildren,
+  AppCalendarRoute: AppCalendarRoute,
   AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDriversRoute: AppDriversRoute,
+  AppInspectionsRoute: AppInspectionsRoute,
+  AppMaintenanceRoute: AppMaintenanceRoute,
+  AppPaymentsRoute: AppPaymentsRoute,
+  AppPromotionsRoute: AppPromotionsRoute,
+  AppRemindersRoute: AppRemindersRoute,
+  AppReportsRoute: AppReportsRoute,
+  AppTemplatesRoute: AppTemplatesRoute,
   AppVehiclesRoute: AppVehiclesRoute,
 }
 

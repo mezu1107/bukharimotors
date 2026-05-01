@@ -9,26 +9,27 @@ import {
   LogOut, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo.jpg";
 
 export const Route = createFileRoute("/_app")({
   component: AppShell,
 });
 
 const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/bookings", label: "Bookings", icon: FileText },
-  { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/clients", label: "Clients", icon: Users },
-  { to: "/vehicles", label: "Vehicles", icon: Car },
-  { to: "/drivers", label: "Drivers", icon: UserCog },
-  { to: "/payments", label: "Payments", icon: Receipt },
-  { to: "/maintenance", label: "Maintenance", icon: Wrench },
-  { to: "/inspections", label: "Inspections", icon: ClipboardCheck },
-  { to: "/reminders", label: "Reminders", icon: Bell },
-  { to: "/promotions", label: "Loyalty & Promos", icon: Gift },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
-  { to: "/templates", label: "Form Templates", icon: Settings2 },
-] as const;
+  { to: "/dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
+  { to: "/bookings" as const, label: "Bookings", icon: FileText },
+  { to: "/calendar" as const, label: "Calendar", icon: CalendarDays },
+  { to: "/clients" as const, label: "Clients", icon: Users },
+  { to: "/vehicles" as const, label: "Vehicles", icon: Car },
+  { to: "/drivers" as const, label: "Drivers", icon: UserCog },
+  { to: "/payments" as const, label: "Payments", icon: Receipt },
+  { to: "/maintenance" as const, label: "Maintenance", icon: Wrench },
+  { to: "/inspections" as const, label: "Inspections", icon: ClipboardCheck },
+  { to: "/reminders" as const, label: "Reminders", icon: Bell },
+  { to: "/promotions" as const, label: "Loyalty & Promos", icon: Gift },
+  { to: "/reports" as const, label: "Reports", icon: BarChart3 },
+  { to: "/templates" as const, label: "Form Templates", icon: Settings2 },
+];
 
 function AppShell() {
   const { user, loading, signOut, roles } = useAuth();
@@ -52,14 +53,12 @@ function AppShell() {
   }
 
   const Sidebar = (
-    <aside className="h-full w-72 flex flex-col bg-sidebar text-sidebar-foreground">
+    <aside className="h-full w-72 flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       <div className="p-5 border-b border-sidebar-border flex items-center gap-3">
-        <div className="size-10 rounded-xl bg-gradient-gold flex items-center justify-center shadow-gold">
-          <Car className="size-5 text-gold-foreground" />
-        </div>
+        <img src={logo} alt="Bukhari Motors logo" className="size-12 rounded-xl object-cover shadow-elegant" />
         <div>
-          <div className="font-bold text-sm leading-tight text-gold-gradient">BUKHARI MOTORS</div>
-          <div className="text-[10px] text-sidebar-foreground/60">& Rent A Car</div>
+          <div className="font-display font-bold text-sm leading-tight">BUKHARI MOTORS</div>
+          <div className="text-[10px] text-muted-foreground">& Rent A Car</div>
         </div>
       </div>
 
