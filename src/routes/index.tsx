@@ -17,10 +17,10 @@ function IndexRedirect() {
     }
   }, [user, loading]);
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
+    <div className="min-h-screen flex items-center justify-center bg-secondary">
       <div className="text-center">
-        <div className="text-4xl font-bold text-gold-gradient mb-2">BUKHARI MOTORS</div>
-        <div className="text-sm text-white/70">Loading…</div>
+        <div className="font-display text-3xl font-bold text-gradient mb-2">BUKHARI MOTORS</div>
+        <div className="text-sm text-muted-foreground">Loading…</div>
       </div>
     </div>
   );
