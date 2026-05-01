@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Car, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
@@ -38,19 +39,17 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-secondary p-4 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-mesh opacity-60" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative w-full max-w-md"
       >
-        <div className="glass-strong rounded-3xl p-8 shadow-elegant">
+        <div className="glass-strong rounded-2xl p-8 shadow-elegant">
           <div className="flex flex-col items-center mb-6">
-            <div className="size-14 rounded-2xl bg-gradient-gold flex items-center justify-center shadow-gold mb-3">
-              <Car className="size-7 text-gold-foreground" />
-            </div>
-            <h1 className="text-2xl font-bold text-gold-gradient">Create Account</h1>
+            <img src={logo} alt="Bukhari Motors logo" className="size-24 object-contain mb-3" />
+            <h1 className="font-display text-2xl font-bold text-gradient">Create Account</h1>
             <p className="text-xs text-muted-foreground mt-1">Bukhari Motors staff portal</p>
           </div>
 
