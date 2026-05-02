@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVehiclesRouteImport } from './routes/_app/vehicles'
 import { Route as AppTemplatesRouteImport } from './routes/_app/templates'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppRemindersRouteImport } from './routes/_app/reminders'
 import { Route as AppPromotionsRouteImport } from './routes/_app/promotions'
@@ -55,6 +56,11 @@ const AppVehiclesRoute = AppVehiclesRouteImport.update({
 const AppTemplatesRoute = AppTemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReportsRoute = AppReportsRouteImport.update({
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/promotions': typeof AppPromotionsRoute
   '/reminders': typeof AppRemindersRoute
   '/reports': typeof AppReportsRoute
+  '/settings': typeof AppSettingsRoute
   '/templates': typeof AppTemplatesRoute
   '/vehicles': typeof AppVehiclesRoute
   '/bookings/new': typeof AppBookingsNewRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/promotions': typeof AppPromotionsRoute
   '/reminders': typeof AppRemindersRoute
   '/reports': typeof AppReportsRoute
+  '/settings': typeof AppSettingsRoute
   '/templates': typeof AppTemplatesRoute
   '/vehicles': typeof AppVehiclesRoute
   '/bookings/new': typeof AppBookingsNewRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/_app/promotions': typeof AppPromotionsRoute
   '/_app/reminders': typeof AppRemindersRoute
   '/_app/reports': typeof AppReportsRoute
+  '/_app/settings': typeof AppSettingsRoute
   '/_app/templates': typeof AppTemplatesRoute
   '/_app/vehicles': typeof AppVehiclesRoute
   '/_app/bookings/new': typeof AppBookingsNewRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/promotions'
     | '/reminders'
     | '/reports'
+    | '/settings'
     | '/templates'
     | '/vehicles'
     | '/bookings/new'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/promotions'
     | '/reminders'
     | '/reports'
+    | '/settings'
     | '/templates'
     | '/vehicles'
     | '/bookings/new'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/_app/promotions'
     | '/_app/reminders'
     | '/_app/reports'
+    | '/_app/settings'
     | '/_app/templates'
     | '/_app/vehicles'
     | '/_app/bookings/new'
@@ -287,6 +299,13 @@ declare module '@tanstack/react-router' {
       path: '/templates'
       fullPath: '/templates'
       preLoaderRoute: typeof AppTemplatesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/reports': {
@@ -387,6 +406,7 @@ interface AppRouteChildren {
   AppPromotionsRoute: typeof AppPromotionsRoute
   AppRemindersRoute: typeof AppRemindersRoute
   AppReportsRoute: typeof AppReportsRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppTemplatesRoute: typeof AppTemplatesRoute
   AppVehiclesRoute: typeof AppVehiclesRoute
   AppBookingsNewRoute: typeof AppBookingsNewRoute
@@ -404,6 +424,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPromotionsRoute: AppPromotionsRoute,
   AppRemindersRoute: AppRemindersRoute,
   AppReportsRoute: AppReportsRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppTemplatesRoute: AppTemplatesRoute,
   AppVehiclesRoute: AppVehiclesRoute,
   AppBookingsNewRoute: AppBookingsNewRoute,
