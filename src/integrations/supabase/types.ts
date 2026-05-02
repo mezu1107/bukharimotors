@@ -295,6 +295,60 @@ export type Database = {
         }
         Relationships: []
       }
+      company_settings: {
+        Row: {
+          address: string | null
+          company_name: string
+          email: string | null
+          facebook_url: string | null
+          form_banner: string | null
+          id: boolean
+          instagram_url: string | null
+          logo_url: string | null
+          phone: string | null
+          tagline: string | null
+          tiktok_url: string | null
+          updated_at: string
+          website: string | null
+          whatsapp_number: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_name?: string
+          email?: string | null
+          facebook_url?: string | null
+          form_banner?: string | null
+          id?: boolean
+          instagram_url?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          tagline?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          website?: string | null
+          whatsapp_number?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_name?: string
+          email?: string | null
+          facebook_url?: string | null
+          form_banner?: string | null
+          id?: boolean
+          instagram_url?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          tagline?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          website?: string | null
+          whatsapp_number?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       drivers: {
         Row: {
           address: string | null
