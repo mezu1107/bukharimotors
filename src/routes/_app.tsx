@@ -29,6 +29,7 @@ const NAV = [
   { to: "/promotions" as const, label: "Loyalty & Promos", icon: Gift },
   { to: "/reports" as const, label: "Reports", icon: BarChart3 },
   { to: "/templates" as const, label: "Form Templates", icon: Settings2 },
+  { to: "/settings" as const, label: "Settings", icon: Settings2 },
 ];
 
 function AppShell() {

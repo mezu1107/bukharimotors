@@ -5,6 +5,16 @@ import { fmtDateTime, fmtMoney } from "./format";
 export interface RentalPdfData {
   bookingNo: string;
   createdAt: string;
+  company?: {
+    company_name: string;
+    tagline?: string | null;
+    phone?: string | null;
+    whatsapp_number?: string | null;
+    email?: string | null;
+    address?: string | null;
+    website?: string | null;
+    form_banner?: string | null;
+  };
   client: { name: string; phone: string; cnic?: string; address?: string; license_no?: string };
   vehicle: { make: string; model: string; year?: number; reg: string; color?: string };
   driver?: { name: string; phone: string } | null;
@@ -34,18 +44,20 @@ export interface RentalPdfData {
 export function generateRentalPdf(d: RentalPdfData): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
+  const company = d.company ?? { company_name: "Bukhari Motors & Rent A Car", phone: "+92 321 5300920", address: "G-6 Markaz, Melody Market Islamabad", form_banner: "ALL KINDS OF VEHICLES ARE AVAILABLE WITH DRIVERS FOR LOCAL AND OUTSTATION" };
 
   // Header band
-  doc.setFillColor(40, 32, 90);
+  doc.setFillColor(6, 42, 77);
   doc.rect(0, 0, pageW, 30, "F");
-  doc.setTextColor(255, 215, 100);
+  doc.setTextColor(185, 138, 50);
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
-  doc.text("BUKHARI MOTORS", 14, 14);
+  doc.text(company.company_name.toUpperCase(), 14, 12);
   doc.setFontSize(10);
   doc.setTextColor(230, 230, 245);
   doc.setFont("helvetica", "normal");
-  doc.text("& Rent A Car — Rental Agreement", 14, 21);
+  doc.text(`${company.phone || company.whatsapp_number || ""}  ${company.email || ""}`.trim(), 14, 19);
+  doc.text(`${company.website || ""}  ${company.address || ""}`.trim(), 14, 25);
 
   doc.setFontSize(9);
   doc.text(`Booking #: ${d.bookingNo}`, pageW - 14, 14, { align: "right" });
@@ -54,12 +66,20 @@ export function generateRentalPdf(d: RentalPdfData): jsPDF {
   let y = 38;
   doc.setTextColor(20, 20, 30);
 
+  doc.setFillColor(6, 42, 77);
+  doc.rect(10, y - 2, pageW - 20, 8, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text(company.form_banner || "RENTAL AGREEMENT", pageW / 2, y + 3, { align: "center" });
+  y += 14;
+
   const sectionTitle = (t: string) => {
-    doc.setFillColor(245, 245, 252);
+    doc.setFillColor(248, 250, 252);
     doc.rect(10, y - 4, pageW - 20, 7, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(40, 32, 90);
+    doc.setTextColor(37, 99, 235);
     doc.text(t, 13, y + 1);
     doc.setTextColor(20, 20, 30);
     doc.setFont("helvetica", "normal");

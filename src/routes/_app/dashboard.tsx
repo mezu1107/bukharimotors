@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Car, Users, FileText, Receipt, TrendingUp, Calendar } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, CartesianGrid } from "recharts";
+
+const RevenueChart = lazy(() => import("@/components/revenue-chart").then((m) => ({ default: m.RevenueChart })));
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: Dashboard,
@@ -83,15 +84,9 @@ function Dashboard() {
             </div>
             <TrendingUp className="size-4 text-success" />
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={trend}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis dataKey="day" stroke="currentColor" fontSize={11} />
-              <YAxis stroke="currentColor" fontSize={11} />
-              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-              <Line type="monotone" dataKey="revenue" stroke="oklch(0.55 0.22 280)" strokeWidth={3} dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <Suspense fallback={<div className="h-[220px] rounded-md bg-secondary" />}>
+            <RevenueChart data={trend} />
+          </Suspense>
         </Card>
 
         <Card className="glass-strong p-5 border-0 shadow-elegant">
@@ -116,4 +111,3 @@ function Dashboard() {
   );
 }
 
-void BarChart; void Bar;
