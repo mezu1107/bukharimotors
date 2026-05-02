@@ -46,7 +46,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#1a1438" },
+      { name: "theme-color", content: "#2563EB" },
       { title: "Bukhari Motors — Rent A Car Management" },
       { name: "description", content: "Premium car rental management system for Bukhari Motors & Rent A Car. Bookings, fleet, clients, payments, PDFs and WhatsApp sharing." },
       { name: "author", content: "Bukhari Motors" },
@@ -62,7 +62,7 @@ export const Route = createRootRoute({
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
