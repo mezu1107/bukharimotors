@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import { openWhatsApp, shareBookingMessage } from "@/lib/whatsapp";
 
-export const Route = createFileRoute("/_app/bookings")({ component: BookingsPage });
+export const Route = createFileRoute("/_app/bookings/")({ component: BookingsPage });
 
 interface Row {
   id: string; booking_no: string; status: string;
