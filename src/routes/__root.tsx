@@ -1,8 +1,23 @@
 import { Outlet, createRootRoute, HeadContent, Scripts, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
+
+function useRegisterSW() {
+  useEffect(() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+    const isPreview = window.location.hostname.includes("lovableproject.com") || window.location.hostname.includes("id-preview--");
+    if (inIframe || isPreview) {
+      // Cleanup any leftover SWs in preview/iframe contexts
+      navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
+      return;
+    }
+    navigator.serviceWorker.register("/sw.js").catch(() => { /* ignore */ });
+  }, []);
+}
 
 function NotFoundComponent() {
   return (
@@ -76,6 +91,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useRegisterSW();
   return (
     <AuthProvider>
       <Outlet />
