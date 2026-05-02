@@ -1,6 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import SignatureCanvas from "react-signature-canvas";
+import html2canvas from "html2canvas";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,32 +10,39 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Save, FileDown, MessageCircle } from "lucide-react";
+import { Loader2, Save, MessageCircle, Plus, Trash2, ImageDown, ArrowLeft } from "lucide-react";
 import { generateRentalPdf } from "@/lib/pdf";
 import { openWhatsApp, shareBookingMessage } from "@/lib/whatsapp";
-import { daysBetween, fmtDateTime } from "@/lib/format";
+import { daysBetween, fmtDateTime, fmtMoney } from "@/lib/format";
+import logo from "@/assets/logo.jpg";
 
 export const Route = createFileRoute("/_app/bookings/new")({ component: NewBooking });
+
+interface CustomField { label: string; value: string }
 
 function NewBooking() {
   const navigate = useNavigate();
   const sigRef = useRef<SignatureCanvas | null>(null);
-  const [clients, setClients] = useState<{ id: string; full_name: string; phone: string }[]>([]);
-  const [vehicles, setVehicles] = useState<{ id: string; make: string; model: string; registration_no: string; daily_rate: number }[]>([]);
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const [clients, setClients] = useState<{ id: string; full_name: string; phone: string; cnic: string | null; address: string | null; license_no: string | null }[]>([]);
+  const [vehicles, setVehicles] = useState<{ id: string; make: string; model: string; year: number | null; color: string | null; registration_no: string; daily_rate: number }[]>([]);
   const [saving, setSaving] = useState(false);
+  const [savingImg, setSavingImg] = useState(false);
   const [form, setForm] = useState({
     client_id: "", vehicle_id: "",
     pickup_at: "", dropoff_at: "",
     pickup_location: "", dropoff_location: "",
     daily_rate: "", advance_amount: "", security_deposit: "",
+    odometer_out: "", fuel_level_out: "Full",
     notes: "",
   });
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   useEffect(() => {
     (async () => {
       const [c, v] = await Promise.all([
-        supabase.from("clients").select("id, full_name, phone").order("full_name"),
-        supabase.from("vehicles").select("id, make, model, registration_no, daily_rate").eq("status", "available"),
+        supabase.from("clients").select("id, full_name, phone, cnic, address, license_no").order("full_name"),
+        supabase.from("vehicles").select("id, make, model, year, color, registration_no, daily_rate").eq("status", "available"),
       ]);
       setClients(c.data ?? []);
       setVehicles(v.data ?? []);
@@ -49,11 +57,32 @@ function NewBooking() {
   const advance = parseFloat(form.advance_amount || "0");
   const balance = total - advance;
 
-  const handleSave = async (alsoShare: boolean) => {
+  const validateForm = () => {
     if (!form.client_id || !form.vehicle_id || !form.pickup_at || !form.dropoff_at) {
       toast.error("Please fill client, vehicle, and dates");
-      return;
+      return false;
     }
+    if (days <= 0) { toast.error("Drop-off must be after pickup"); return false; }
+    return true;
+  };
+
+  const buildPdfData = (bookingNo: string) => ({
+    bookingNo,
+    createdAt: new Date().toISOString(),
+    client: { name: selClient!.full_name, phone: selClient!.phone, cnic: selClient!.cnic ?? undefined, address: selClient!.address ?? undefined, license_no: selClient!.license_no ?? undefined },
+    vehicle: { make: selVehicle!.make, model: selVehicle!.model, year: selVehicle!.year ?? undefined, color: selVehicle!.color ?? undefined, reg: selVehicle!.registration_no },
+    pickup_at: form.pickup_at, dropoff_at: form.dropoff_at,
+    pickup_location: form.pickup_location, dropoff_location: form.dropoff_location,
+    odometer_out: form.odometer_out ? Number(form.odometer_out) : null,
+    fuel_level_out: form.fuel_level_out,
+    daily_rate: dailyRate, days, total, advance, balance,
+    security_deposit: parseFloat(form.security_deposit || "0"),
+    notes: [form.notes, ...customFields.filter(f => f.label && f.value).map(f => `${f.label}: ${f.value}`)].filter(Boolean).join("\n"),
+    signature_dataurl: sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : null,
+  });
+
+  const handleSave = async (action: "pdf" | "whatsapp" | "image") => {
+    if (!validateForm()) return;
     setSaving(true);
     const sigData = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : null;
     const { data, error } = await supabase.from("bookings").insert([{
@@ -64,36 +93,33 @@ function NewBooking() {
       dropoff_at: new Date(form.dropoff_at).toISOString(),
       pickup_location: form.pickup_location || null,
       dropoff_location: form.dropoff_location || null,
+      odometer_out: form.odometer_out ? Number(form.odometer_out) : null,
+      fuel_level_out: form.fuel_level_out || null,
       daily_rate: dailyRate,
       total_amount: total,
       advance_amount: advance,
       balance_amount: balance,
       security_deposit: parseFloat(form.security_deposit || "0"),
       notes: form.notes || null,
+      custom_fields: Object.fromEntries(customFields.filter(f => f.label).map(f => [f.label, f.value])),
       signature_url: sigData,
       terms_accepted: true,
       status: "confirmed",
     }]).select("booking_no").single();
     setSaving(false);
-    if (error || !data) { toast.error(error?.message ?? "Failed"); return; }
+    if (error || !data) { toast.error(error?.message ?? "Failed to save"); return; }
     toast.success(`Booking ${data.booking_no} created`);
 
-    // Generate PDF
-    const doc = generateRentalPdf({
-      bookingNo: data.booking_no,
-      createdAt: new Date().toISOString(),
-      client: { name: selClient!.full_name, phone: selClient!.phone },
-      vehicle: { make: selVehicle!.make, model: selVehicle!.model, reg: selVehicle!.registration_no },
-      pickup_at: form.pickup_at, dropoff_at: form.dropoff_at,
-      pickup_location: form.pickup_location, dropoff_location: form.dropoff_location,
-      daily_rate: dailyRate, days, total, advance, balance,
-      security_deposit: parseFloat(form.security_deposit || "0"),
-      notes: form.notes,
-      signature_dataurl: sigData,
-    });
-    doc.save(`${data.booking_no}.pdf`);
+    const pdf = generateRentalPdf(buildPdfData(data.booking_no));
 
-    if (alsoShare && selClient) {
+    if (action === "image") {
+      // Render the on-screen preview to PNG and save to gallery/downloads
+      await saveAsImage(data.booking_no);
+    } else {
+      pdf.save(`${data.booking_no}.pdf`);
+    }
+
+    if (action === "whatsapp" && selClient) {
       openWhatsApp(selClient.phone, shareBookingMessage({
         bookingNo: data.booking_no, clientName: selClient.full_name,
         vehicle: `${selVehicle!.make} ${selVehicle!.model} (${selVehicle!.registration_no})`,
@@ -101,21 +127,49 @@ function NewBooking() {
         total, advance, balance,
       }));
     }
-    navigate({ to: "/bookings" });
+    setTimeout(() => navigate({ to: "/bookings" }), 600);
+  };
+
+  const saveAsImage = async (bookingNo: string) => {
+    if (!previewRef.current) return;
+    setSavingImg(true);
+    try {
+      const canvas = await html2canvas(previewRef.current, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+      const url = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url; a.download = `${bookingNo}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      toast.success("Image saved to your downloads / gallery");
+    } catch (e) {
+      toast.error("Could not generate image");
+    }
+    setSavingImg(false);
+  };
+
+  const handleSaveImageOnly = async () => {
+    if (!validateForm()) return;
+    await saveAsImage("BM-Preview-" + Date.now());
   };
 
   return (
-    <div className="space-y-5 max-w-4xl">
-      <div><h1 className="text-2xl font-bold">New Rental Agreement</h1><p className="text-sm text-muted-foreground">Fill the form, generate PDF, and share via WhatsApp</p></div>
+    <div className="space-y-5 max-w-5xl">
+      <div className="flex items-center gap-3">
+        <Link to="/bookings"><Button size="icon" variant="ghost"><ArrowLeft className="size-4" /></Button></Link>
+        <div>
+          <h1 className="text-2xl font-display font-bold">New Rental Agreement</h1>
+          <p className="text-sm text-muted-foreground">Fill, customize fields, save as PDF/Image, share via WhatsApp</p>
+        </div>
+      </div>
 
-      <Card className="glass-strong border-0 p-5 space-y-4">
+      <Card className="border bg-card p-5 space-y-4 shadow-sm">
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <Label>Client *</Label>
             <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={clients.length ? "Select client" : "No clients — add one first"} /></SelectTrigger>
               <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.full_name} — {c.phone}</SelectItem>)}</SelectContent>
             </Select>
+            {clients.length === 0 && <Link to="/clients" className="text-xs text-primary hover:underline">+ Add client</Link>}
           </div>
           <div>
             <Label>Vehicle *</Label>
@@ -123,9 +177,10 @@ function NewBooking() {
               const vh = vehicles.find((x) => x.id === v);
               setForm({ ...form, vehicle_id: v, daily_rate: vh ? String(vh.daily_rate) : form.daily_rate });
             }}>
-              <SelectTrigger><SelectValue placeholder="Select available vehicle" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={vehicles.length ? "Select available vehicle" : "No available vehicles"} /></SelectTrigger>
               <SelectContent>{vehicles.map((v) => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} — {v.registration_no}</SelectItem>)}</SelectContent>
             </Select>
+            {vehicles.length === 0 && <Link to="/vehicles" className="text-xs text-primary hover:underline">+ Add vehicle</Link>}
           </div>
           <div><Label>Pickup Date/Time *</Label><Input type="datetime-local" value={form.pickup_at} onChange={(e) => setForm({ ...form, pickup_at: e.target.value })} /></div>
           <div><Label>Drop-off Date/Time *</Label><Input type="datetime-local" value={form.dropoff_at} onChange={(e) => setForm({ ...form, dropoff_at: e.target.value })} /></div>
@@ -134,13 +189,47 @@ function NewBooking() {
           <div><Label>Daily Rate (PKR)</Label><Input type="number" value={form.daily_rate} onChange={(e) => setForm({ ...form, daily_rate: e.target.value })} /></div>
           <div><Label>Advance (PKR)</Label><Input type="number" value={form.advance_amount} onChange={(e) => setForm({ ...form, advance_amount: e.target.value })} /></div>
           <div><Label>Security Deposit</Label><Input type="number" value={form.security_deposit} onChange={(e) => setForm({ ...form, security_deposit: e.target.value })} /></div>
+          <div><Label>Odometer Out (km)</Label><Input type="number" value={form.odometer_out} onChange={(e) => setForm({ ...form, odometer_out: e.target.value })} /></div>
+          <div>
+            <Label>Fuel Level Out</Label>
+            <Select value={form.fuel_level_out} onValueChange={(v) => setForm({ ...form, fuel_level_out: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["Empty","1/4","1/2","3/4","Full"].map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
           <div className="md:col-span-2"><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 text-center bg-muted/30 rounded-lg p-3">
+        {/* Custom editable fields */}
+        <div className="border-t pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-base font-semibold">Custom Fields</Label>
+            <Button type="button" size="sm" variant="outline" onClick={() => setCustomFields([...customFields, { label: "", value: "" }])}>
+              <Plus className="size-3.5 mr-1" /> Add Field
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {customFields.map((f, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <Input placeholder="Field label" value={f.label} onChange={(e) => {
+                  const next = [...customFields]; next[i] = { ...next[i], label: e.target.value }; setCustomFields(next);
+                }} className="flex-1" />
+                <Input placeholder="Value" value={f.value} onChange={(e) => {
+                  const next = [...customFields]; next[i] = { ...next[i], value: e.target.value }; setCustomFields(next);
+                }} className="flex-1" />
+                <Button type="button" size="icon" variant="ghost" onClick={() => setCustomFields(customFields.filter((_, j) => j !== i))}>
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+            {customFields.length === 0 && <div className="text-xs text-muted-foreground">No custom fields. Click "Add Field" to add any extra info.</div>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 text-center bg-muted/40 rounded-lg p-3">
           <div><div className="text-xs text-muted-foreground">Days</div><div className="font-bold text-lg">{days}</div></div>
-          <div><div className="text-xs text-muted-foreground">Total</div><div className="font-bold text-lg text-gradient">PKR {total.toLocaleString()}</div></div>
-          <div><div className="text-xs text-muted-foreground">Balance</div><div className="font-bold text-lg text-gold-gradient">PKR {balance.toLocaleString()}</div></div>
+          <div><div className="text-xs text-muted-foreground">Total</div><div className="font-bold text-lg text-primary">{fmtMoney(total)}</div></div>
+          <div><div className="text-xs text-muted-foreground">Balance</div><div className="font-bold text-lg" style={{ color: "#F97316" }}>{fmtMoney(balance)}</div></div>
         </div>
 
         <div>
@@ -152,17 +241,124 @@ function NewBooking() {
         </div>
 
         <div className="flex gap-2 flex-wrap pt-2">
-          <Button onClick={() => handleSave(false)} disabled={saving} className="bg-gradient-primary shadow-elegant">
+          <Button onClick={() => handleSave("pdf")} disabled={saving} style={{ background: "#2563EB" }} className="text-white hover:opacity-90">
             {saving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Save className="size-4 mr-2" />}
             Save & Download PDF
           </Button>
-          <Button onClick={() => handleSave(true)} disabled={saving} variant="outline">
-            <MessageCircle className="size-4 mr-2" /> Save + WhatsApp Share
+          <Button onClick={() => handleSave("image")} disabled={saving || savingImg} style={{ background: "#F97316" }} className="text-white hover:opacity-90">
+            {savingImg ? <Loader2 className="size-4 mr-2 animate-spin" /> : <ImageDown className="size-4 mr-2" />}
+            Save & Download Image
+          </Button>
+          <Button onClick={() => handleSave("whatsapp")} disabled={saving} variant="outline">
+            <MessageCircle className="size-4 mr-2" /> Save + WhatsApp
+          </Button>
+          <Button type="button" variant="ghost" onClick={handleSaveImageOnly} disabled={savingImg}>
+            Preview Image (no save)
           </Button>
         </div>
       </Card>
 
-      <span className="hidden"><FileDown /></span>
+      {/* Hidden printable preview for image export */}
+      <div className="overflow-hidden absolute -left-[9999px] top-0 pointer-events-none" aria-hidden>
+        <div ref={previewRef} style={{ width: 794, padding: 32, background: "#FFFFFF", color: "#0F172A", fontFamily: "Inter, sans-serif" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "3px solid #2563EB", paddingBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <img src={logo} alt="logo" style={{ width: 64, height: 64, borderRadius: 12, objectFit: "cover" }} />
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "Poppins" }}>BUKHARI MOTORS</div>
+                <div style={{ fontSize: 12, color: "#64748B" }}>& Rent A Car — Rental Agreement</div>
+              </div>
+            </div>
+            <div style={{ textAlign: "right", fontSize: 12 }}>
+              <div style={{ fontWeight: 600 }}>Date: {fmtDateTime(new Date().toISOString())}</div>
+            </div>
+          </div>
+
+          <Section title="Client Details">
+            <Grid items={[
+              ["Name", selClient?.full_name ?? "—"], ["Phone", selClient?.phone ?? "—"],
+              ["CNIC", selClient?.cnic ?? "—"], ["License", selClient?.license_no ?? "—"],
+            ]} />
+          </Section>
+
+          <Section title="Vehicle Details">
+            <Grid items={[
+              ["Vehicle", selVehicle ? `${selVehicle.make} ${selVehicle.model} ${selVehicle.year ?? ""}` : "—"],
+              ["Reg #", selVehicle?.registration_no ?? "—"],
+              ["Color", selVehicle?.color ?? "—"], ["Fuel out", form.fuel_level_out],
+            ]} />
+          </Section>
+
+          <Section title="Trip">
+            <Grid items={[
+              ["Pickup", form.pickup_at ? fmtDateTime(form.pickup_at) : "—"], ["Drop-off", form.dropoff_at ? fmtDateTime(form.dropoff_at) : "—"],
+              ["Pickup Loc", form.pickup_location || "—"], ["Drop-off Loc", form.dropoff_location || "—"],
+              ["Odometer Out", form.odometer_out || "—"], ["Days", String(days)],
+            ]} />
+          </Section>
+
+          <Section title="Charges">
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <tbody>
+                <Row label={`Daily Rate × ${days} day(s)`} value={fmtMoney(dailyRate * days)} />
+                <Row label="TOTAL" value={fmtMoney(total)} bold />
+                <Row label="Advance" value={fmtMoney(advance)} />
+                <Row label="Balance Due" value={fmtMoney(balance)} bold color="#F97316" />
+                {form.security_deposit && <Row label="Security Deposit" value={fmtMoney(parseFloat(form.security_deposit))} />}
+              </tbody>
+            </table>
+          </Section>
+
+          {customFields.filter(f => f.label).length > 0 && (
+            <Section title="Additional Information">
+              <Grid items={customFields.filter(f => f.label).map(f => [f.label, f.value || "—"] as [string, string])} />
+            </Section>
+          )}
+
+          {form.notes && <Section title="Notes"><div style={{ fontSize: 12 }}>{form.notes}</div></Section>}
+
+          <div style={{ marginTop: 32, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#64748B" }}>Renter Signature</div>
+              <div style={{ borderBottom: "1px solid #E2E8F0", height: 50 }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#64748B" }}>Bukhari Motors</div>
+              <div style={{ borderBottom: "1px solid #E2E8F0", height: 50 }} />
+            </div>
+          </div>
+
+          <div style={{ marginTop: 24, fontSize: 10, color: "#64748B", textAlign: "center" }}>
+            Bukhari Motors & Rent A Car — Pakistan
+          </div>
+        </div>
+      </div>
     </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ background: "#F8FAFC", padding: "6px 10px", fontWeight: 700, fontSize: 12, color: "#2563EB", fontFamily: "Poppins" }}>{title.toUpperCase()}</div>
+      <div style={{ padding: "10px 4px" }}>{children}</div>
+    </div>
+  );
+}
+function Grid({ items }: { items: [string, string][] }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12 }}>
+      {items.map(([k, v], i) => (
+        <div key={i}><span style={{ color: "#64748B" }}>{k}: </span><span style={{ fontWeight: 600 }}>{v}</span></div>
+      ))}
+    </div>
+  );
+}
+function Row({ label, value, bold, color }: { label: string; value: string; bold?: boolean; color?: string }) {
+  return (
+    <tr style={{ borderBottom: "1px solid #E2E8F0" }}>
+      <td style={{ padding: "6px 4px" }}>{label}</td>
+      <td style={{ padding: "6px 4px", textAlign: "right", fontWeight: bold ? 700 : 400, color: color ?? "inherit" }}>{value}</td>
+    </tr>
   );
 }

@@ -25,7 +25,7 @@ import { Route as AppDriversRouteImport } from './routes/_app/drivers'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app/clients'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
-import { Route as AppBookingsRouteImport } from './routes/_app/bookings'
+import { Route as AppBookingsIndexRouteImport } from './routes/_app/bookings.index'
 import { Route as AppBookingsNewRouteImport } from './routes/_app/bookings/new'
 
 const SignupRoute = SignupRouteImport.update({
@@ -107,22 +107,21 @@ const AppCalendarRoute = AppCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AppRoute,
 } as any)
-const AppBookingsRoute = AppBookingsRouteImport.update({
-  id: '/bookings',
-  path: '/bookings',
+const AppBookingsIndexRoute = AppBookingsIndexRouteImport.update({
+  id: '/bookings/',
+  path: '/bookings/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBookingsNewRoute = AppBookingsNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AppBookingsRoute,
+  id: '/bookings/new',
+  path: '/bookings/new',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/bookings': typeof AppBookingsRouteWithChildren
   '/calendar': typeof AppCalendarRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -136,12 +135,12 @@ export interface FileRoutesByFullPath {
   '/templates': typeof AppTemplatesRoute
   '/vehicles': typeof AppVehiclesRoute
   '/bookings/new': typeof AppBookingsNewRoute
+  '/bookings/': typeof AppBookingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/bookings': typeof AppBookingsRouteWithChildren
   '/calendar': typeof AppCalendarRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -155,6 +154,7 @@ export interface FileRoutesByTo {
   '/templates': typeof AppTemplatesRoute
   '/vehicles': typeof AppVehiclesRoute
   '/bookings/new': typeof AppBookingsNewRoute
+  '/bookings': typeof AppBookingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -162,7 +162,6 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/_app/bookings': typeof AppBookingsRouteWithChildren
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -176,6 +175,7 @@ export interface FileRoutesById {
   '/_app/templates': typeof AppTemplatesRoute
   '/_app/vehicles': typeof AppVehiclesRoute
   '/_app/bookings/new': typeof AppBookingsNewRoute
+  '/_app/bookings/': typeof AppBookingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -183,7 +183,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
-    | '/bookings'
     | '/calendar'
     | '/clients'
     | '/dashboard'
@@ -197,12 +196,12 @@ export interface FileRouteTypes {
     | '/templates'
     | '/vehicles'
     | '/bookings/new'
+    | '/bookings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/signup'
-    | '/bookings'
     | '/calendar'
     | '/clients'
     | '/dashboard'
@@ -216,13 +215,13 @@ export interface FileRouteTypes {
     | '/templates'
     | '/vehicles'
     | '/bookings/new'
+    | '/bookings'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/login'
     | '/signup'
-    | '/_app/bookings'
     | '/_app/calendar'
     | '/_app/clients'
     | '/_app/dashboard'
@@ -236,6 +235,7 @@ export interface FileRouteTypes {
     | '/_app/templates'
     | '/_app/vehicles'
     | '/_app/bookings/new'
+    | '/_app/bookings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -359,37 +359,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCalendarRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/bookings': {
-      id: '/_app/bookings'
+    '/_app/bookings/': {
+      id: '/_app/bookings/'
       path: '/bookings'
-      fullPath: '/bookings'
-      preLoaderRoute: typeof AppBookingsRouteImport
+      fullPath: '/bookings/'
+      preLoaderRoute: typeof AppBookingsIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/bookings/new': {
       id: '/_app/bookings/new'
-      path: '/new'
+      path: '/bookings/new'
       fullPath: '/bookings/new'
       preLoaderRoute: typeof AppBookingsNewRouteImport
-      parentRoute: typeof AppBookingsRoute
+      parentRoute: typeof AppRoute
     }
   }
 }
 
-interface AppBookingsRouteChildren {
-  AppBookingsNewRoute: typeof AppBookingsNewRoute
-}
-
-const AppBookingsRouteChildren: AppBookingsRouteChildren = {
-  AppBookingsNewRoute: AppBookingsNewRoute,
-}
-
-const AppBookingsRouteWithChildren = AppBookingsRoute._addFileChildren(
-  AppBookingsRouteChildren,
-)
-
 interface AppRouteChildren {
-  AppBookingsRoute: typeof AppBookingsRouteWithChildren
   AppCalendarRoute: typeof AppCalendarRoute
   AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -402,10 +389,11 @@ interface AppRouteChildren {
   AppReportsRoute: typeof AppReportsRoute
   AppTemplatesRoute: typeof AppTemplatesRoute
   AppVehiclesRoute: typeof AppVehiclesRoute
+  AppBookingsNewRoute: typeof AppBookingsNewRoute
+  AppBookingsIndexRoute: typeof AppBookingsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppBookingsRoute: AppBookingsRouteWithChildren,
   AppCalendarRoute: AppCalendarRoute,
   AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
@@ -418,6 +406,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppReportsRoute: AppReportsRoute,
   AppTemplatesRoute: AppTemplatesRoute,
   AppVehiclesRoute: AppVehiclesRoute,
+  AppBookingsNewRoute: AppBookingsNewRoute,
+  AppBookingsIndexRoute: AppBookingsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -431,12 +421,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
