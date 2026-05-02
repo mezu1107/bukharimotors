@@ -384,7 +384,7 @@ function RentalSheet({ refEl, company, logoSrc, bookingNo, formDate, selClient, 
         <Line label="Date" value={fmtDateTime(formDate).split(",")[0]} />
         <Line label="Client Name" value={selClient?.full_name} wide />
         <Line label="Cell" value={selClient?.phone} />
-        <Line label="Address" value={selClient?.address} wide />
+        <Line label="Address" value={selClient?.address ?? ""} wide />
         <Line label="Vehicle Make & Model" value={vehicle} />
         <Line label="Reg No" value={selVehicle?.registration_no} />
         <Line label="Booking From" value={form.pickup_location || (form.pickup_at ? fmtDateTime(form.pickup_at) : "")} />
