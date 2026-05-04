@@ -87,6 +87,7 @@ function NewBooking() {
 
   useEffect(() => {
     (async () => {
+      toDataUrl(logo).then(setLogoData);
       const [c, v, s] = await Promise.all([
         supabase.from("clients").select("id, full_name, phone, cnic, address, license_no").order("full_name"),
         supabase.from("vehicles").select("id, make, model, year, color, registration_no, daily_rate").eq("status", "available"),
@@ -267,7 +268,7 @@ function NewBooking() {
     } finally {
       setBusy(null);
       setSaving(false);
-      setTimeout(() => navigate({ to: "/bookings" }), 600);
+      if (action === "whatsapp") setTimeout(() => navigate({ to: "/bookings" }), 600);
     }
   };
 
