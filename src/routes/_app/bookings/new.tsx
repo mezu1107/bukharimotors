@@ -233,7 +233,7 @@ function NewBooking() {
       if (action === "image") {
         setBusy("image");
         const canvas = await renderSheetToCanvas(data.booking_no);
-        const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => b ? res(b) : rej(new Error("blob")), "image/png", 1));
+        const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b: Blob | null) => b ? res(b) : rej(new Error("blob")), "image/png", 1));
         await downloadBlob(blob, `${data.booking_no}.png`);
         toast.success("Image saved – check Downloads / Gallery");
       }
@@ -402,6 +402,35 @@ function NewBooking() {
 // ---- Inline-styled HTML so html2canvas reproduces it pixel-perfect ----
 function esc(s: string | null | undefined) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]!));
+}
+
+function renderHtmlSheetWithSvg(html: string): Promise<HTMLCanvasElement> {
+  const width = 794;
+  const height = 1123;
+  const scale = Math.min(2, Math.max(1.25, window.devicePixelRatio || 1));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width * scale}" height="${height * scale}" viewBox="0 0 ${width} ${height}">
+    <foreignObject width="${width}" height="${height}">
+      <div xmlns="http://www.w3.org/1999/xhtml">${html}</div>
+    </foreignObject>
+  </svg>`;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas not supported")); return; }
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(img.src);
+      resolve(canvas);
+    };
+    img.onerror = () => reject(new Error("SVG render failed"));
+    img.src = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+  });
 }
 
 function fieldRow(label: string, value: string, opts?: { wide?: boolean }) {
