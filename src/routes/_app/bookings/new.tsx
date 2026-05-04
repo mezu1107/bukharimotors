@@ -492,7 +492,8 @@ function sheetHtml(p: {
 
   const stars = "★★★★★";
 
-  return `<div style="width:794px;min-height:1123px;background:#FFFFFF;color:#0F172A;font-family:Inter,Arial,sans-serif;padding:0;position:relative;box-sizing:border-box;overflow:hidden;">
+  return `<div class="bm-export-sheet" style="width:794px;min-height:1123px;background:#FFFFFF;color:#0F172A;font-family:Inter,Arial,sans-serif;padding:0;position:relative;box-sizing:border-box;overflow:hidden;">
+    <style>.bm-export-sheet,.bm-export-sheet *{border-color:#E2E8F0!important;outline-color:#2563EB!important;box-sizing:border-box;}</style>
     <!-- Top decorative band -->
     <div style="position:relative;height:30px;background:#FFFFFF;">
       <div style="position:absolute;top:0;left:0;width:55%;height:18px;background:#062A4D;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%);"></div>
