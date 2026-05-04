@@ -159,36 +159,50 @@ function NewBooking() {
     status: "confirmed" as const,
   });
 
-  // Render the rental sheet into a hidden node and rasterize it
+  // Render the rental sheet without html2canvas first; html2canvas cannot parse Tailwind v4 oklch() colors.
   const renderSheetToCanvas = async (bookingNo: string) => {
     await document.fonts?.ready;
-    const { default: html2canvas } = await import("html2canvas");
+    const html = sheetHtml({
+      company, logoSrc: logoData, bookingNo, formDate,
+      selClient, selVehicle,
+      form, days, total, advance, balance, totalReading,
+      customFields, signature: sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : "",
+    });
+
+    try {
+      return await renderHtmlSheetWithSvg(html);
+    } catch {
+      // Fallback for browsers that block SVG foreignObject rendering.
+    }
+
     const host = document.createElement("div");
     host.style.position = "fixed";
     host.style.left = "-10000px";
     host.style.top = "0";
     host.style.background = "#FFFFFF";
     document.body.appendChild(host);
-    const sigData = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : "";
-    host.innerHTML = sheetHtml({
-      company, logoSrc: logoData, bookingNo, formDate,
-      selClient, selVehicle,
-      form, days, total, advance, balance, totalReading,
-      customFields, signature: sigData,
-    });
+    host.innerHTML = html;
     const node = host.firstElementChild as HTMLElement;
-    // Wait a tick for images to lay out
-    await new Promise((r) => setTimeout(r, 80));
-    const canvas = await html2canvas(node, {
-      scale: 2,
-      backgroundColor: "#FFFFFF",
-      useCORS: true,
-      allowTaint: false,
-      logging: false,
-      windowWidth: 794,
-    });
-    document.body.removeChild(host);
-    return canvas;
+    try {
+      const { default: html2canvas } = await import("html2canvas");
+      await new Promise((r) => requestAnimationFrame(r));
+      return await html2canvas(node, {
+        scale: 2,
+        backgroundColor: "#FFFFFF",
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        windowWidth: 794,
+        onclone: (_doc, clonedNode) => {
+          clonedNode.querySelectorAll("*").forEach((el) => {
+            const node = el as HTMLElement;
+            node.style.color = node.style.color || "#0F172A";
+          });
+        },
+      });
+    } finally {
+      document.body.removeChild(host);
+    }
   };
 
   const downloadBlob = async (blob: Blob, filename: string) => {
