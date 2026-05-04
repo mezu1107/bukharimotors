@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.jpg";
+import { RealtimeNotifications } from "@/components/realtime-notifications";
 
 export const Route = createFileRoute("/_app")({
   component: AppShell,
@@ -160,6 +161,7 @@ function AppShell() {
         </header>
 
         <main className="flex-1 p-4 md:p-6 max-w-[1400px] w-full mx-auto">
+          <RealtimeNotifications />
           <Outlet />
         </main>
       </div>
