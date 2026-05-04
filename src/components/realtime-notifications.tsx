@@ -44,7 +44,7 @@ async function notify(payload: EventPayload) {
 
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   const registration = await navigator.serviceWorker?.ready.catch(() => null);
-  const options: NotificationOptions = { body, icon: "/icon-192.png", badge: "/icon-192.png", vibrate: [180, 80, 180], tag: `${payload.table}-${payload.eventType}` };
+  const options = { body, icon: "/icon-192.png", badge: "/icon-192.png", vibrate: [180, 80, 180], tag: `${payload.table}-${payload.eventType}` } as NotificationOptions & { vibrate: number[] };
   if (registration?.active) registration.active.postMessage({ type: "SHOW_NOTIFICATION", title, options });
   else new Notification(title, options);
 }
