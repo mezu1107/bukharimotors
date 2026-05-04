@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Save, MessageCircle, Plus, Trash2, ImageDown, ArrowLeft, Printer } from "lucide-react";
+import { Loader2, Save, MessageCircle, Plus, Trash2, ImageDown, ArrowLeft, FileDown, Eye } from "lucide-react";
 import { openWhatsApp, shareBookingMessage } from "@/lib/whatsapp";
 import { daysBetween, fmtDateTime, fmtMoney } from "@/lib/format";
 import logo from "@/assets/logo.jpg";
@@ -35,9 +35,9 @@ interface CompanySettings {
 
 const FALLBACK_COMPANY: CompanySettings = {
   company_name: "Bukhari Motors & Rent A Car",
-  tagline: "Luxury | Comfort | Trust",
-  phone: "+92 321 5300920",
-  whatsapp_number: "+92 321 5300920",
+  tagline: "LUXURY | COMFORT | TRUST",
+  phone: "0321 5300920",
+  whatsapp_number: "0321 5300920",
   email: "",
   address: "G-6 Markaz, Melody Market Islamabad",
   website: "",
@@ -49,21 +49,38 @@ const FALLBACK_COMPANY: CompanySettings = {
   form_banner: "ALL KINDS OF VEHICLES ARE AVAILABLE WITH DRIVERS FOR LOCAL AND OUTSTATION",
 };
 
+// Convert any image URL to base64 data URL so html2canvas never taints the canvas
+async function toDataUrl(src: string): Promise<string> {
+  try {
+    const r = await fetch(src, { mode: "cors" });
+    const b = await r.blob();
+    return await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result as string);
+      fr.onerror = rej;
+      fr.readAsDataURL(b);
+    });
+  } catch {
+    return src;
+  }
+}
+
 function NewBooking() {
   const navigate = useNavigate();
   const sigRef = useRef<SignatureCanvas | null>(null);
-  const previewRef = useRef<HTMLDivElement | null>(null);
   const [company, setCompany] = useState<CompanySettings>(FALLBACK_COMPANY);
+  const [logoData, setLogoData] = useState<string>(logo);
   const [clients, setClients] = useState<{ id: string; full_name: string; phone: string; cnic: string | null; address: string | null; license_no: string | null }[]>([]);
   const [vehicles, setVehicles] = useState<{ id: string; make: string; model: string; year: number | null; color: string | null; registration_no: string; daily_rate: number }[]>([]);
   const [saving, setSaving] = useState(false);
-  const [savingImg, setSavingImg] = useState(false);
+  const [busy, setBusy] = useState<null | "image" | "pdf" | "preview">(null);
+  const [showPreview, setShowPreview] = useState(false);
   const [form, setForm] = useState({
     client_id: "", vehicle_id: "",
     pickup_at: "", dropoff_at: "",
     pickup_location: "", dropoff_location: "",
     daily_rate: "", advance_amount: "", security_deposit: "",
-    odometer_out: "", fuel_level_out: "Full",
+    odometer_out: "", odometer_in: "", fuel_level_out: "Full",
     notes: "", driver_name: "", driver_phone: "", toll_tax: "",
   });
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
@@ -77,7 +94,10 @@ function NewBooking() {
       ]);
       setClients(c.data ?? []);
       setVehicles(v.data ?? []);
-      if (s.data) setCompany({ ...FALLBACK_COMPANY, ...s.data });
+      if (s.data) {
+        setCompany({ ...FALLBACK_COMPANY, ...s.data });
+        if (s.data.logo_url) toDataUrl(s.data.logo_url).then(setLogoData);
+      }
       if (c.error) toast.error(c.error.message);
       if (v.error) toast.error(v.error.message);
     })();
@@ -91,11 +111,18 @@ function NewBooking() {
   const total = dailyRate * days + tollTax;
   const advance = parseFloat(form.advance_amount || "0");
   const balance = total - advance;
+  const odoIn = parseFloat(form.odometer_in || "0");
+  const odoOut = parseFloat(form.odometer_out || "0");
+  const totalReading = odoIn && odoOut ? Math.max(0, odoIn - odoOut) : 0;
   const formDate = useMemo(() => new Date().toISOString(), []);
 
   const validateForm = () => {
     if (!form.client_id || !form.vehicle_id || !form.pickup_at || !form.dropoff_at) {
       toast.error("Please fill client, vehicle, and dates");
+      return false;
+    }
+    if (!form.driver_name.trim() || !form.driver_phone.trim()) {
+      toast.error("Driver name and cell are required (we don't rent without driver)");
       return false;
     }
     if (days <= 0) { toast.error("Drop-off must be after pickup"); return false; }
@@ -111,6 +138,7 @@ function NewBooking() {
     pickup_location: form.pickup_location || null,
     dropoff_location: form.dropoff_location || null,
     odometer_out: form.odometer_out ? Number(form.odometer_out) : null,
+    odometer_in: form.odometer_in ? Number(form.odometer_in) : null,
     fuel_level_out: form.fuel_level_out || null,
     daily_rate: dailyRate,
     extra_charges: tollTax,
@@ -118,11 +146,12 @@ function NewBooking() {
     advance_amount: advance,
     balance_amount: balance,
     security_deposit: parseFloat(form.security_deposit || "0"),
+    with_driver: true,
     notes: form.notes || null,
     custom_fields: Object.fromEntries([
       ...customFields.filter(f => f.label).map(f => [f.label, f.value]),
-      ...(form.driver_name ? [["Driver Name", form.driver_name]] : []),
-      ...(form.driver_phone ? [["Driver Cell", form.driver_phone]] : []),
+      ["Driver Name", form.driver_name],
+      ["Driver Cell", form.driver_phone],
       ...(form.toll_tax ? [["Toll Tax", form.toll_tax]] : []),
     ]),
     signature_url: sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : null,
@@ -130,40 +159,49 @@ function NewBooking() {
     status: "confirmed" as const,
   });
 
-  const buildPdfData = (bookingNo: string) => ({
-    bookingNo,
-    createdAt: formDate,
-    company,
-    client: { name: selClient!.full_name, phone: selClient!.phone, cnic: selClient!.cnic ?? undefined, address: selClient!.address ?? undefined, license_no: selClient!.license_no ?? undefined },
-    vehicle: { make: selVehicle!.make, model: selVehicle!.model, year: selVehicle!.year ?? undefined, color: selVehicle!.color ?? undefined, reg: selVehicle!.registration_no },
-    driver: form.driver_name ? { name: form.driver_name, phone: form.driver_phone } : null,
-    pickup_at: form.pickup_at, dropoff_at: form.dropoff_at,
-    pickup_location: form.pickup_location, dropoff_location: form.dropoff_location,
-    odometer_out: form.odometer_out ? Number(form.odometer_out) : null,
-    fuel_level_out: form.fuel_level_out,
-    daily_rate: dailyRate, days, total, advance, balance,
-    extra_charges: tollTax,
-    security_deposit: parseFloat(form.security_deposit || "0"),
-    notes: [form.notes, ...customFields.filter(f => f.label && f.value).map(f => `${f.label}: ${f.value}`)].filter(Boolean).join("\n"),
-    signature_dataurl: sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : null,
-  });
+  // Render the rental sheet into a hidden node and rasterize it
+  const renderSheetToCanvas = async (bookingNo: string) => {
+    await document.fonts?.ready;
+    const { default: html2canvas } = await import("html2canvas");
+    const host = document.createElement("div");
+    host.style.position = "fixed";
+    host.style.left = "-10000px";
+    host.style.top = "0";
+    host.style.background = "#FFFFFF";
+    document.body.appendChild(host);
+    const sigData = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : "";
+    host.innerHTML = sheetHtml({
+      company, logoSrc: logoData, bookingNo, formDate,
+      selClient, selVehicle,
+      form, days, total, advance, balance, totalReading,
+      customFields, signature: sigData,
+    });
+    const node = host.firstElementChild as HTMLElement;
+    // Wait a tick for images to lay out
+    await new Promise((r) => setTimeout(r, 80));
+    const canvas = await html2canvas(node, {
+      scale: 2,
+      backgroundColor: "#FFFFFF",
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      windowWidth: 794,
+    });
+    document.body.removeChild(host);
+    return canvas;
+  };
 
   const downloadBlob = async (blob: Blob, filename: string) => {
     const file = new File([blob], filename, { type: blob.type });
-    const share = navigator as Navigator & { canShare?: (data: ShareData & { files?: File[] }) => boolean; share?: (data: ShareData & { files?: File[] }) => Promise<void> };
-    if (share.canShare?.({ files: [file] })) {
-      await share.share?.({ files: [file], title: filename });
-      return;
+    const nav = navigator as Navigator & { canShare?: (d: { files?: File[] }) => boolean; share?: (d: { files?: File[]; title?: string }) => Promise<void> };
+    if (nav.canShare?.({ files: [file] })) {
+      try { await nav.share?.({ files: [file], title: filename }); return; } catch { /* fall through */ }
     }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.rel = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+    a.href = url; a.download = filename; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
   };
 
   const handleSave = async (action: "pdf" | "whatsapp" | "image") => {
@@ -177,51 +215,46 @@ function NewBooking() {
     }
     toast.success(`Booking ${data.booking_no} created`);
 
-    if (action === "image") {
-      await saveAsImage(data.booking_no);
-    }
-    if (action === "pdf") {
-      const { generateRentalPdf } = await import("@/lib/pdf");
-      const pdf = generateRentalPdf(buildPdfData(data.booking_no));
-      await downloadBlob(pdf.output("blob"), `${data.booking_no}.pdf`);
-      toast.success("PDF ready for download / share");
-    }
-    if (action === "whatsapp" && selClient) {
-      openWhatsApp(selClient.phone, shareBookingMessage({
-        bookingNo: data.booking_no, clientName: selClient.full_name,
-        vehicle: `${selVehicle!.make} ${selVehicle!.model} (${selVehicle!.registration_no})`,
-        pickup: fmtDateTime(form.pickup_at), dropoff: fmtDateTime(form.dropoff_at),
-        total, advance, balance,
-      }));
-    }
-    setSaving(false);
-  };
-
-  const saveAsImage = async (bookingNo: string) => {
-    if (!previewRef.current) return;
-    setSavingImg(true);
     try {
-      await document.fonts?.ready;
-      const { default: html2canvas } = await import("html2canvas");
-      const canvas = await html2canvas(previewRef.current, {
-        scale: Math.min(3, window.devicePixelRatio || 2),
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-      });
-      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => b ? resolve(b) : reject(new Error("No image generated")), "image/png", 1));
-      await downloadBlob(blob, `${bookingNo}-rental-form.png`);
-      toast.success("Image ready for download / gallery");
-    } catch {
-      toast.error("Could not generate image. Try PDF or browser print.");
+      if (action === "image") {
+        setBusy("image");
+        const canvas = await renderSheetToCanvas(data.booking_no);
+        const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => b ? res(b) : rej(new Error("blob")), "image/png", 1));
+        await downloadBlob(blob, `${data.booking_no}.png`);
+        toast.success("Image saved – check Downloads / Gallery");
+      }
+      if (action === "pdf") {
+        setBusy("pdf");
+        const canvas = await renderSheetToCanvas(data.booking_no);
+        const { default: jsPDF } = await import("jspdf");
+        const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const ratio = canvas.height / canvas.width;
+        const imgW = pageW;
+        const imgH = imgW * ratio;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+        if (imgH <= pageH) pdf.addImage(dataUrl, "JPEG", 0, 0, imgW, imgH);
+        else pdf.addImage(dataUrl, "JPEG", 0, 0, imgW, imgH);
+        await downloadBlob(pdf.output("blob"), `${data.booking_no}.pdf`);
+        toast.success("Invoice PDF ready");
+      }
+      if (action === "whatsapp" && selClient) {
+        openWhatsApp(selClient.phone, shareBookingMessage({
+          bookingNo: data.booking_no, clientName: selClient.full_name,
+          vehicle: `${selVehicle!.make} ${selVehicle!.model} (${selVehicle!.registration_no})`,
+          pickup: fmtDateTime(form.pickup_at), dropoff: fmtDateTime(form.dropoff_at),
+          total, advance, balance,
+        }));
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Export failed. Please try again.");
+    } finally {
+      setBusy(null);
+      setSaving(false);
+      setTimeout(() => navigate({ to: "/bookings" }), 600);
     }
-    setSavingImg(false);
-  };
-
-  const printForm = async () => {
-    if (!validateForm()) return;
-    await saveAsImage("BM-Form-" + Date.now());
   };
 
   return (
@@ -230,7 +263,7 @@ function NewBooking() {
         <Link to="/bookings"><Button size="icon" variant="ghost"><ArrowLeft className="size-4" /></Button></Link>
         <div>
           <h1 className="text-2xl font-display font-bold">New Rental Agreement</h1>
-          <p className="text-sm text-muted-foreground">Paper-style form, editable fields, image/PDF export for phone gallery</p>
+          <p className="text-sm text-muted-foreground">Fill the form, save, then download invoice as image or PDF.</p>
         </div>
       </div>
 
@@ -255,19 +288,20 @@ function NewBooking() {
             </Select>
             {vehicles.length === 0 && <Link to="/vehicles" className="text-xs text-primary hover:underline">+ Add vehicle</Link>}
           </div>
-          <div><Label>Pickup Date/Time *</Label><Input type="datetime-local" value={form.pickup_at} onChange={(e) => setForm({ ...form, pickup_at: e.target.value })} /></div>
-          <div><Label>Drop-off Date/Time *</Label><Input type="datetime-local" value={form.dropoff_at} onChange={(e) => setForm({ ...form, dropoff_at: e.target.value })} /></div>
+          <div><Label>Date-out (Pickup) *</Label><Input type="datetime-local" value={form.pickup_at} onChange={(e) => setForm({ ...form, pickup_at: e.target.value })} /></div>
+          <div><Label>Date-in (Drop-off) *</Label><Input type="datetime-local" value={form.dropoff_at} onChange={(e) => setForm({ ...form, dropoff_at: e.target.value })} /></div>
           <div><Label>Booking From</Label><Input value={form.pickup_location} onChange={(e) => setForm({ ...form, pickup_location: e.target.value })} /></div>
           <div><Label>Booking To</Label><Input value={form.dropoff_location} onChange={(e) => setForm({ ...form, dropoff_location: e.target.value })} /></div>
-          <div><Label>Driver Name</Label><Input value={form.driver_name} onChange={(e) => setForm({ ...form, driver_name: e.target.value })} /></div>
-          <div><Label>Driver Cell</Label><Input value={form.driver_phone} onChange={(e) => setForm({ ...form, driver_phone: e.target.value })} /></div>
+          <div><Label>Driver Name *</Label><Input required value={form.driver_name} onChange={(e) => setForm({ ...form, driver_name: e.target.value })} placeholder="Mandatory — no self-drive" /></div>
+          <div><Label>Driver Cell *</Label><Input required value={form.driver_phone} onChange={(e) => setForm({ ...form, driver_phone: e.target.value })} placeholder="Mandatory" /></div>
           <div><Label>Daily Rate (PKR)</Label><Input type="number" value={form.daily_rate} onChange={(e) => setForm({ ...form, daily_rate: e.target.value })} /></div>
           <div><Label>Advance (PKR)</Label><Input type="number" value={form.advance_amount} onChange={(e) => setForm({ ...form, advance_amount: e.target.value })} /></div>
           <div><Label>Security Deposit</Label><Input type="number" value={form.security_deposit} onChange={(e) => setForm({ ...form, security_deposit: e.target.value })} /></div>
-          <div><Label>Toll Tax / Extra</Label><Input type="number" value={form.toll_tax} onChange={(e) => setForm({ ...form, toll_tax: e.target.value })} /></div>
-          <div><Label>ODO Reading Out</Label><Input type="number" value={form.odometer_out} onChange={(e) => setForm({ ...form, odometer_out: e.target.value })} /></div>
+          <div><Label>Toll Tax</Label><Input type="number" value={form.toll_tax} onChange={(e) => setForm({ ...form, toll_tax: e.target.value })} /></div>
+          <div><Label>ODO Reading-out</Label><Input type="number" value={form.odometer_out} onChange={(e) => setForm({ ...form, odometer_out: e.target.value })} /></div>
+          <div><Label>ODO Reading-in</Label><Input type="number" value={form.odometer_in} onChange={(e) => setForm({ ...form, odometer_in: e.target.value })} /></div>
           <div>
-            <Label>Fuel</Label>
+            <Label>With Fuel or Without Fuel</Label>
             <Select value={form.fuel_level_out} onValueChange={(v) => setForm({ ...form, fuel_level_out: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{["Without Fuel","Empty","1/4","1/2","3/4","Full"].map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
@@ -297,7 +331,7 @@ function NewBooking() {
                 </Button>
               </div>
             ))}
-            {customFields.length === 0 && <div className="text-xs text-muted-foreground">No custom fields. Click “Add Field” to add any extra info.</div>}
+            {customFields.length === 0 && <div className="text-xs text-muted-foreground">No custom fields. Click "Add Field" for any extra info.</div>}
           </div>
         </div>
 
@@ -317,111 +351,157 @@ function NewBooking() {
 
         <div className="flex gap-2 flex-wrap pt-2">
           <Button onClick={() => handleSave("pdf")} disabled={saving} className="bg-gradient-primary text-primary-foreground hover:opacity-90">
-            {saving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Save className="size-4 mr-2" />}
+            {busy === "pdf" ? <Loader2 className="size-4 mr-2 animate-spin" /> : <FileDown className="size-4 mr-2" />}
             Save & Download PDF
           </Button>
-          <Button onClick={() => handleSave("image")} disabled={saving || savingImg} className="bg-gradient-cta text-cta-foreground hover:opacity-90">
-            {savingImg ? <Loader2 className="size-4 mr-2 animate-spin" /> : <ImageDown className="size-4 mr-2" />}
+          <Button onClick={() => handleSave("image")} disabled={saving} className="bg-gradient-cta text-cta-foreground hover:opacity-90">
+            {busy === "image" ? <Loader2 className="size-4 mr-2 animate-spin" /> : <ImageDown className="size-4 mr-2" />}
             Save Image to Phone
           </Button>
           <Button onClick={() => handleSave("whatsapp")} disabled={saving} variant="outline">
-            <MessageCircle className="size-4 mr-2" /> Save + WhatsApp
+            {saving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <MessageCircle className="size-4 mr-2" />}
+            Save + WhatsApp
           </Button>
-          <Button type="button" variant="ghost" onClick={printForm} disabled={savingImg}>
-            <Printer className="size-4 mr-2" /> Image Preview
+          <Button type="button" variant="ghost" onClick={() => setShowPreview((s) => !s)}>
+            <Eye className="size-4 mr-2" /> {showPreview ? "Hide" : "Show"} Preview
           </Button>
         </div>
       </Card>
 
-      <div className="rounded-lg border bg-secondary/40 p-3 overflow-x-auto">
-        <div className="text-sm font-semibold mb-2">Live export preview</div>
-        <div className="origin-top-left scale-[0.45] sm:scale-[0.62] md:scale-[0.8] h-[520px] sm:h-[700px] md:h-[900px] w-[794px]">
-          <RentalSheet refEl={previewRef} company={company} logoSrc={company.logo_url || logo} bookingNo="S.No" formDate={formDate} selClient={selClient} selVehicle={selVehicle} form={form} days={days} total={total} advance={advance} balance={balance} customFields={customFields} />
+      {showPreview && (
+        <div className="rounded-lg border bg-secondary/40 p-3 overflow-x-auto">
+          <div className="text-sm font-semibold mb-2">Invoice preview</div>
+          <div
+            className="origin-top-left scale-[0.42] sm:scale-[0.6] md:scale-[0.78] h-[600px] sm:h-[750px] md:h-[920px]"
+            dangerouslySetInnerHTML={{ __html: sheetHtml({
+              company, logoSrc: logoData, bookingNo: "S.No",
+              formDate, selClient, selVehicle, form, days, total, advance, balance, totalReading,
+              customFields, signature: "",
+            }) }}
+          />
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-function RentalSheet({ refEl, company, logoSrc, bookingNo, formDate, selClient, selVehicle, form, days, total, advance, balance, customFields }: {
-  refEl: React.RefObject<HTMLDivElement | null>;
-  company: CompanySettings;
-  logoSrc: string;
-  bookingNo: string;
-  formDate: string;
+// ---- Inline-styled HTML so html2canvas reproduces it pixel-perfect ----
+function esc(s: string | null | undefined) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]!));
+}
+
+function fieldRow(label: string, value: string, opts?: { wide?: boolean }) {
+  const span = opts?.wide ? "1 / -1" : "auto";
+  return `<div style="grid-column:${span};display:flex;align-items:flex-end;gap:6px;min-width:0;">
+    <span style="font-weight:600;color:#0F172A;white-space:nowrap;font-size:13px;">${esc(label)}:</span>
+    <span style="flex:1;border-bottom:1.5px solid #94A3B8;min-height:20px;padding:0 4px 2px;font-weight:600;color:#0F172A;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(value)}</span>
+  </div>`;
+}
+
+function sheetHtml(p: {
+  company: CompanySettings; logoSrc: string; bookingNo: string; formDate: string;
   selClient?: { full_name: string; phone: string; cnic: string | null; address: string | null; license_no: string | null };
   selVehicle?: { make: string; model: string; year: number | null; color: string | null; registration_no: string };
-  form: { pickup_at: string; dropoff_at: string; pickup_location: string; dropoff_location: string; odometer_out: string; fuel_level_out: string; notes: string; driver_name: string; driver_phone: string; toll_tax: string };
-  days: number; total: number; advance: number; balance: number; customFields: CustomField[];
+  form: { pickup_at: string; dropoff_at: string; pickup_location: string; dropoff_location: string; odometer_out: string; odometer_in: string; fuel_level_out: string; notes: string; driver_name: string; driver_phone: string; toll_tax: string };
+  days: number; total: number; advance: number; balance: number; totalReading: number;
+  customFields: CustomField[]; signature: string;
 }) {
-  const vehicle = selVehicle ? `${selVehicle.make} ${selVehicle.model} ${selVehicle.year ?? ""}`.trim() : "";
-  return (
-    <div ref={refEl} style={{ width: 794, minHeight: 1123, background: "#FFFFFF", color: "#0F172A", fontFamily: "Inter, Arial, sans-serif", padding: 34, position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 26, background: "#062A4D" }} />
-      <div style={{ position: "absolute", top: 26, right: 0, width: 370, height: 8, background: "#B98A32" }} />
-      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 18, alignItems: "center", marginTop: 34 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src={logoSrc} alt="logo" crossOrigin="anonymous" style={{ width: 74, height: 74, objectFit: "cover", borderRadius: 6 }} />
-          <div>
-            <div style={{ fontFamily: "Poppins, Arial, sans-serif", fontSize: 28, lineHeight: 1, fontWeight: 800, color: "#062A4D", letterSpacing: 0 }}>{company.company_name.replace("& Rent A Car", "")}</div>
-            <div style={{ fontFamily: "Poppins, Arial, sans-serif", color: "#B98A32", fontSize: 18, fontWeight: 700, marginTop: 4 }}>& RENT A CAR</div>
-            <div style={{ fontSize: 10, color: "#0F172A", fontWeight: 700, marginTop: 6, textTransform: "uppercase" }}>{company.tagline}</div>
-          </div>
-        </div>
-        <div style={{ textAlign: "right", fontSize: 13, color: "#334155", lineHeight: 1.8 }}>
-          <div><strong>{company.phone || company.whatsapp_number}</strong></div>
-          {company.email && <div>{company.email}</div>}
-          {company.website && <div>{company.website}</div>}
-          <div>{company.address}</div>
-        </div>
-      </div>
-      <div style={{ marginTop: 22, background: "#062A4D", color: "#FFFFFF", fontFamily: "Poppins, Arial, sans-serif", fontWeight: 700, fontSize: 13, textAlign: "center", padding: "9px 18px", borderLeft: "18px solid #B98A32", borderRight: "18px solid #B98A32" }}>
-        {company.form_banner}
-      </div>
+  const c = p.company;
+  const v = p.selVehicle;
+  const cli = p.selClient;
+  const date = fmtDateTime(p.formDate).split(",")[0];
+  const dateOut = p.form.pickup_at ? fmtDateTime(p.form.pickup_at).split(",")[0] : "";
+  const dateIn = p.form.dropoff_at ? fmtDateTime(p.form.dropoff_at).split(",")[0] : "";
+  const vehicleLine = v ? `${v.make} ${v.model} ${v.year ?? ""}`.trim() : "";
 
-      <div style={{ marginTop: 42, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "22px 34px", fontSize: 14 }}>
-        <Line label="S.No" value={bookingNo} />
-        <Line label="Date" value={fmtDateTime(formDate).split(",")[0]} />
-        <Line label="Client Name" value={selClient?.full_name} wide />
-        <Line label="Cell" value={selClient?.phone} />
-        <Line label="Address" value={selClient?.address ?? ""} wide />
-        <Line label="Vehicle Make & Model" value={vehicle} />
-        <Line label="Reg No" value={selVehicle?.registration_no} />
-        <Line label="Booking From" value={form.pickup_location || (form.pickup_at ? fmtDateTime(form.pickup_at) : "")} />
-        <Line label="to" value={form.dropoff_location || (form.dropoff_at ? fmtDateTime(form.dropoff_at) : "")} />
-        <Line label="Date-out" value={form.pickup_at ? fmtDateTime(form.pickup_at).split(",")[0] : ""} />
-        <Line label="Date-in" value={form.dropoff_at ? fmtDateTime(form.dropoff_at).split(",")[0] : ""} />
-        <Line label="Driver Name" value={form.driver_name} />
-        <Line label="Driver Cell" value={form.driver_phone} />
-        <Line label="ODO Reading out" value={form.odometer_out} />
-        <Line label="ODO Reading-in" value="" />
-        <Line label="Total Reading" value={days ? `${days} day(s)` : ""} />
-        <Line label="With Fuel or Without Fuel" value={form.fuel_level_out} />
-        <Line label="Toll Tax" value={form.toll_tax ? fmtMoney(Number(form.toll_tax)) : ""} />
-        <Line label="Total Payment" value={total ? fmtMoney(total) : ""} />
-        <Line label="Advance" value={advance ? fmtMoney(advance) : ""} />
-        <Line label="Balance" value={balance ? fmtMoney(balance) : ""} />
-        <Line label="Client Signature" value="" />
-        <Line label="Prepared By" value="Bukhari Motors" />
-        {customFields.filter(f => f.label).slice(0, 6).map((f) => <Line key={f.label} label={f.label} value={f.value} />)}
-      </div>
-      {form.notes && <div style={{ marginTop: 24, fontSize: 13 }}><strong>Notes:</strong> {form.notes}</div>}
+  const fields = [
+    fieldRow("S.No", p.bookingNo),
+    fieldRow("Date", date),
+    fieldRow("Client Name", cli?.full_name ?? "", { wide: false }),
+    fieldRow("Cell", cli?.phone ?? ""),
+    fieldRow("Address", cli?.address ?? "", { wide: true }),
+    fieldRow("Vehicle Make & Model", vehicleLine),
+    fieldRow("Reg No", v?.registration_no ?? ""),
+    fieldRow("Booking From", p.form.pickup_location),
+    fieldRow("to", p.form.dropoff_location),
+    fieldRow("Date-out", dateOut),
+    fieldRow("Date-in", dateIn),
+    fieldRow("Driver Name", p.form.driver_name),
+    fieldRow("Driver Cell", p.form.driver_phone),
+    fieldRow("ODO Reading out", p.form.odometer_out),
+    fieldRow("ODO Reading-in", p.form.odometer_in),
+    fieldRow("Total Reading", p.totalReading ? String(p.totalReading) + " km" : (p.days ? `${p.days} day(s)` : "")),
+    fieldRow("With Fuel or Without Fuel", p.form.fuel_level_out),
+    fieldRow("Toll Tax", p.form.toll_tax ? fmtMoney(Number(p.form.toll_tax)) : ""),
+    fieldRow("Total Payment", p.total ? fmtMoney(p.total) : ""),
+    fieldRow("Advance", p.advance ? fmtMoney(p.advance) : ""),
+    fieldRow("Balance", p.balance ? fmtMoney(p.balance) : ""),
+    `<div style="grid-column:auto;display:flex;align-items:flex-end;gap:6px;">
+      <span style="font-weight:600;font-size:13px;">Client Signature:</span>
+      <span style="flex:1;border-bottom:1.5px solid #94A3B8;min-height:36px;display:flex;align-items:end;">
+        ${p.signature ? `<img src="${p.signature}" style="max-height:34px;max-width:100%;" />` : ""}
+      </span>
+    </div>`,
+    fieldRow("Prepared By", "Bukhari Motors"),
+    ...p.customFields.filter(f => f.label).slice(0, 6).map(f => fieldRow(f.label, f.value)),
+  ].join("");
 
-      <div style={{ position: "absolute", left: 34, right: 34, bottom: 30, textAlign: "center" }}>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 35, fontStyle: "italic", color: "#B98A32" }}>Thank you</div>
-        <div style={{ fontFamily: "Poppins, Arial, sans-serif", fontSize: 12, letterSpacing: 7, fontWeight: 700 }}>FOR CHOOSING US</div>
-      </div>
-      <div style={{ position: "absolute", bottom: 0, left: 0, width: 185, height: 45, background: "#062A4D", borderTop: "10px solid #B98A32" }} />
-      <div style={{ position: "absolute", bottom: 0, right: 0, width: 185, height: 45, background: "#062A4D", borderTop: "10px solid #B98A32" }} />
+  const stars = "★★★★★";
+
+  return `<div style="width:794px;min-height:1123px;background:#FFFFFF;color:#0F172A;font-family:Inter,Arial,sans-serif;padding:0;position:relative;box-sizing:border-box;overflow:hidden;">
+    <!-- Top decorative band -->
+    <div style="position:relative;height:30px;background:#FFFFFF;">
+      <div style="position:absolute;top:0;left:0;width:55%;height:18px;background:#062A4D;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%);"></div>
+      <div style="position:absolute;top:0;right:0;width:55%;height:18px;background:#062A4D;clip-path:polygon(22px 0,100% 0,100% 100%,0 100%);"></div>
+      <div style="position:absolute;top:18px;left:0;width:55%;height:6px;background:#B98A32;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);"></div>
+      <div style="position:absolute;top:18px;right:0;width:55%;height:6px;background:#B98A32;clip-path:polygon(14px 0,100% 0,100% 100%,0 100%);"></div>
     </div>
-  );
-}
 
-function Line({ label, value, wide }: { label: string; value?: string; wide?: boolean }) {
-  return (
-    <div style={{ gridColumn: wide ? "1 / -1" : undefined, display: "flex", alignItems: "flex-end", gap: 8, minWidth: 0 }}>
-      <span style={{ fontWeight: 700, whiteSpace: "nowrap" }}>{label}:</span>
-      <span style={{ flex: 1, minHeight: 22, borderBottom: "1.5px solid #94A3B8", paddingLeft: 6, fontWeight: 600, color: "#0F172A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value || ""}</span>
+    <div style="padding:20px 36px 0;">
+      <!-- Header: logo + tagline + stars / contact -->
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:center;">
+        <div>
+          <img src="${p.logoSrc}" alt="logo" crossorigin="anonymous" style="width:230px;height:auto;display:block;" />
+          <div style="font-family:Poppins,Arial,sans-serif;color:#0F172A;font-size:11px;font-weight:600;letter-spacing:5px;margin-top:4px;text-align:center;width:230px;">${esc(c.tagline ?? "")}</div>
+          <div style="margin-top:8px;font-size:22px;color:#F59E0B;letter-spacing:6px;text-align:center;width:230px;">${stars}</div>
+        </div>
+        <div style="text-align:left;font-size:14px;color:#0F172A;line-height:1.9;align-self:end;padding-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="display:inline-flex;width:22px;height:22px;border-radius:50%;border:1.5px solid #062A4D;align-items:center;justify-content:center;color:#062A4D;font-weight:700;">☎</span><strong style="font-weight:700;">${esc(c.phone || c.whatsapp_number || "")}</strong></div>
+          ${c.email ? `<div style="display:flex;align-items:center;gap:8px;"><span style="color:#062A4D;">✉</span>${esc(c.email)}</div>` : ""}
+          ${c.website ? `<div style="display:flex;align-items:center;gap:8px;"><span style="color:#062A4D;">🌐</span>${esc(c.website)}</div>` : ""}
+          <div style="display:flex;align-items:flex-start;gap:8px;"><span style="color:#DC2626;font-size:18px;line-height:1;">📍</span><span>${esc(c.address ?? "")}</span></div>
+        </div>
+      </div>
+
+      <!-- Banner with diagonal cuts -->
+      <div style="margin-top:18px;position:relative;height:36px;">
+        <div style="position:absolute;inset:0;background:#062A4D;color:#FFFFFF;font-family:Poppins,Arial,sans-serif;font-weight:700;font-size:13px;letter-spacing:0.5px;text-align:center;display:flex;align-items:center;justify-content:center;clip-path:polygon(20px 0,calc(100% - 20px) 0,100% 50%,calc(100% - 20px) 100%,20px 100%,0 50%);">
+          ${esc(c.form_banner ?? "")}
+        </div>
+        <div style="position:absolute;left:0;top:0;bottom:0;width:30px;background:#B98A32;clip-path:polygon(0 0,100% 50%,0 100%);"></div>
+        <div style="position:absolute;right:0;top:0;bottom:0;width:30px;background:#B98A32;clip-path:polygon(100% 0,100% 100%,0 50%);"></div>
+      </div>
+
+      <!-- Fields grid -->
+      <div style="margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:22px 28px;font-size:13px;padding-bottom:90px;">
+        ${fields}
+      </div>
+
+      ${p.form.notes ? `<div style="margin-top:14px;font-size:12px;color:#0F172A;"><strong>Notes:</strong> ${esc(p.form.notes)}</div>` : ""}
     </div>
-  );
+
+    <!-- Footer "Thank you" + corner ribbons -->
+    <div style="position:absolute;left:0;right:0;bottom:34px;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:14px;">
+        <div style="width:80px;height:8px;background:linear-gradient(90deg,transparent,#B98A32);"></div>
+        <div style="font-family:Georgia,serif;font-size:34px;font-style:italic;color:#B98A32;line-height:1;">Thank you</div>
+        <div style="width:80px;height:8px;background:linear-gradient(90deg,#B98A32,transparent);"></div>
+      </div>
+      <div style="font-family:Poppins,Arial,sans-serif;font-size:11px;letter-spacing:7px;font-weight:700;margin-top:4px;color:#0F172A;">FOR CHOOSING US</div>
+    </div>
+    <div style="position:absolute;bottom:0;left:0;width:200px;height:40px;background:#062A4D;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%);"></div>
+    <div style="position:absolute;bottom:0;right:0;width:200px;height:40px;background:#062A4D;clip-path:polygon(22px 0,100% 0,100% 100%,0 100%);"></div>
+    <div style="position:absolute;bottom:32px;left:0;width:200px;height:6px;background:#B98A32;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);"></div>
+    <div style="position:absolute;bottom:32px;right:0;width:200px;height:6px;background:#B98A32;clip-path:polygon(14px 0,100% 0,100% 100%,0 100%);"></div>
+  </div>`;
 }
