@@ -87,6 +87,7 @@ function NewBooking() {
 
   useEffect(() => {
     (async () => {
+      toDataUrl(logo).then(setLogoData);
       const [c, v, s] = await Promise.all([
         supabase.from("clients").select("id, full_name, phone, cnic, address, license_no").order("full_name"),
         supabase.from("vehicles").select("id, make, model, year, color, registration_no, daily_rate").eq("status", "available"),
@@ -159,36 +160,50 @@ function NewBooking() {
     status: "confirmed" as const,
   });
 
-  // Render the rental sheet into a hidden node and rasterize it
+  // Render the rental sheet without html2canvas first; html2canvas cannot parse Tailwind v4 oklch() colors.
   const renderSheetToCanvas = async (bookingNo: string) => {
     await document.fonts?.ready;
-    const { default: html2canvas } = await import("html2canvas");
+    const html = sheetHtml({
+      company, logoSrc: logoData, bookingNo, formDate,
+      selClient, selVehicle,
+      form, days, total, advance, balance, totalReading,
+      customFields, signature: sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : "",
+    });
+
+    try {
+      return await renderHtmlSheetWithSvg(html);
+    } catch {
+      // Fallback for browsers that block SVG foreignObject rendering.
+    }
+
     const host = document.createElement("div");
     host.style.position = "fixed";
     host.style.left = "-10000px";
     host.style.top = "0";
     host.style.background = "#FFFFFF";
     document.body.appendChild(host);
-    const sigData = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : "";
-    host.innerHTML = sheetHtml({
-      company, logoSrc: logoData, bookingNo, formDate,
-      selClient, selVehicle,
-      form, days, total, advance, balance, totalReading,
-      customFields, signature: sigData,
-    });
+    host.innerHTML = html;
     const node = host.firstElementChild as HTMLElement;
-    // Wait a tick for images to lay out
-    await new Promise((r) => setTimeout(r, 80));
-    const canvas = await html2canvas(node, {
-      scale: 2,
-      backgroundColor: "#FFFFFF",
-      useCORS: true,
-      allowTaint: false,
-      logging: false,
-      windowWidth: 794,
-    });
-    document.body.removeChild(host);
-    return canvas;
+    try {
+      const { default: html2canvas } = await import("html2canvas");
+      await new Promise((r) => requestAnimationFrame(r));
+      return await html2canvas(node, {
+        scale: 2,
+        backgroundColor: "#FFFFFF",
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        windowWidth: 794,
+        onclone: (_doc, clonedNode) => {
+          clonedNode.querySelectorAll("*").forEach((el) => {
+            const node = el as HTMLElement;
+            node.style.color = node.style.color || "#0F172A";
+          });
+        },
+      });
+    } finally {
+      document.body.removeChild(host);
+    }
   };
 
   const downloadBlob = async (blob: Blob, filename: string) => {
@@ -219,7 +234,7 @@ function NewBooking() {
       if (action === "image") {
         setBusy("image");
         const canvas = await renderSheetToCanvas(data.booking_no);
-        const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => b ? res(b) : rej(new Error("blob")), "image/png", 1));
+        const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b: Blob | null) => b ? res(b) : rej(new Error("blob")), "image/png", 1));
         await downloadBlob(blob, `${data.booking_no}.png`);
         toast.success("Image saved – check Downloads / Gallery");
       }
@@ -253,7 +268,7 @@ function NewBooking() {
     } finally {
       setBusy(null);
       setSaving(false);
-      setTimeout(() => navigate({ to: "/bookings" }), 600);
+      if (action === "whatsapp") setTimeout(() => navigate({ to: "/bookings" }), 600);
     }
   };
 
@@ -390,6 +405,35 @@ function esc(s: string | null | undefined) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]!));
 }
 
+function renderHtmlSheetWithSvg(html: string): Promise<HTMLCanvasElement> {
+  const width = 794;
+  const height = 1123;
+  const scale = Math.min(2, Math.max(1.25, window.devicePixelRatio || 1));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width * scale}" height="${height * scale}" viewBox="0 0 ${width} ${height}">
+    <foreignObject width="${width}" height="${height}">
+      <div xmlns="http://www.w3.org/1999/xhtml">${html}</div>
+    </foreignObject>
+  </svg>`;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas not supported")); return; }
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(img.src);
+      resolve(canvas);
+    };
+    img.onerror = () => reject(new Error("SVG render failed"));
+    img.src = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+  });
+}
+
 function fieldRow(label: string, value: string, opts?: { wide?: boolean }) {
   const span = opts?.wide ? "1 / -1" : "auto";
   return `<div style="grid-column:${span};display:flex;align-items:flex-end;gap:6px;min-width:0;">
@@ -448,7 +492,8 @@ function sheetHtml(p: {
 
   const stars = "★★★★★";
 
-  return `<div style="width:794px;min-height:1123px;background:#FFFFFF;color:#0F172A;font-family:Inter,Arial,sans-serif;padding:0;position:relative;box-sizing:border-box;overflow:hidden;">
+  return `<div class="bm-export-sheet" style="width:794px;min-height:1123px;background:#FFFFFF;color:#0F172A;font-family:Inter,Arial,sans-serif;padding:0;position:relative;box-sizing:border-box;overflow:hidden;">
+    <style>.bm-export-sheet,.bm-export-sheet *{border-color:#E2E8F0!important;outline-color:#2563EB!important;box-sizing:border-box;}</style>
     <!-- Top decorative band -->
     <div style="position:relative;height:30px;background:#FFFFFF;">
       <div style="position:absolute;top:0;left:0;width:55%;height:18px;background:#062A4D;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%);"></div>

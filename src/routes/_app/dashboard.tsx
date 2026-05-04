@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,18 +92,18 @@ function Dashboard() {
         <Card className="glass-strong p-5 border-0 shadow-elegant">
           <div className="font-semibold mb-3">Quick Actions</div>
           <div className="space-y-2 text-sm">
-            <a href="/bookings/new" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition">
+            <Link to="/bookings/new" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition">
               <FileText className="size-4 text-primary" /> New Rental Agreement
-            </a>
-            <a href="/clients" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition">
+            </Link>
+            <Link to="/clients" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition">
               <Users className="size-4 text-primary" /> Add Client
-            </a>
-            <a href="/vehicles" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition">
+            </Link>
+            <Link to="/vehicles" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition">
               <Car className="size-4 text-primary" /> Manage Fleet
-            </a>
-            <a href="/calendar" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition">
+            </Link>
+            <Link to="/calendar" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition">
               <Calendar className="size-4 text-primary" /> View Calendar
-            </a>
+            </Link>
           </div>
         </Card>
       </div>
