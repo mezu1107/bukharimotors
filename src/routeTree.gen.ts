@@ -26,6 +26,7 @@ import { Route as AppDriversRouteImport } from './routes/_app/drivers'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app/clients'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
+import { Route as AppAiRouteImport } from './routes/_app/ai'
 import { Route as AppBookingsIndexRouteImport } from './routes/_app/bookings.index'
 import { Route as AppBookingsNewRouteImport } from './routes/_app/bookings/new'
 
@@ -113,6 +114,11 @@ const AppCalendarRoute = AppCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAiRoute = AppAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBookingsIndexRoute = AppBookingsIndexRouteImport.update({
   id: '/bookings/',
   path: '/bookings/',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/ai': typeof AppAiRoute
   '/calendar': typeof AppCalendarRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/ai': typeof AppAiRoute
   '/calendar': typeof AppCalendarRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_app/ai': typeof AppAiRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/ai'
     | '/calendar'
     | '/clients'
     | '/dashboard'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/ai'
     | '/calendar'
     | '/clients'
     | '/dashboard'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/signup'
+    | '/_app/ai'
     | '/_app/calendar'
     | '/_app/clients'
     | '/_app/dashboard'
@@ -378,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCalendarRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/ai': {
+      id: '/_app/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AppAiRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/bookings/': {
       id: '/_app/bookings/'
       path: '/bookings'
@@ -396,6 +415,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAiRoute: typeof AppAiRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -414,6 +434,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAiRoute: AppAiRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
