@@ -135,5 +135,5 @@ export const aiAssist = createServerFn({ method: "POST" })
       });
     } catch { /* ignore logging failure */ }
 
-    return { text, parsed };
+    return { text, parsedJson };
   });
