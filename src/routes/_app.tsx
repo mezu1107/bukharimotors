@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Car, Users, UserCog, CalendarDays, Wrench, FileText,
   Bell, Settings2, BarChart3, Gift, ClipboardCheck, Receipt, Menu, X,
-  LogOut, Loader2,
+  LogOut, Loader2, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.jpg";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/_app")({
 const NAV = [
   { to: "/dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
   { to: "/bookings" as const, label: "Bookings", icon: FileText },
+  { to: "/ai" as const, label: "AI Tools", icon: Sparkles },
   { to: "/calendar" as const, label: "Calendar", icon: CalendarDays },
   { to: "/clients" as const, label: "Clients", icon: Users },
   { to: "/vehicles" as const, label: "Vehicles", icon: Car },
