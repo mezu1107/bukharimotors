@@ -119,10 +119,10 @@ export const aiAssist = createServerFn({ method: "POST" })
     const text = json.choices?.[0]?.message?.content ?? "";
 
     // Try to extract JSON if response contains it
-    let parsed: Record<string, unknown> | unknown[] | null = null;
+    let parsedJson: string | null = null;
     const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
     if (jsonMatch) {
-      try { parsed = JSON.parse(jsonMatch[0]); } catch { /* ignore */ }
+      try { JSON.parse(jsonMatch[0]); parsedJson = jsonMatch[0]; } catch { /* ignore */ }
     }
 
     // Log usage (don't fail if logging errors)
