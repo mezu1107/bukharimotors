@@ -22,6 +22,7 @@ import { Route as AppPromotionsRouteImport } from './routes/_app/promotions'
 import { Route as AppPaymentsRouteImport } from './routes/_app/payments'
 import { Route as AppMaintenanceRouteImport } from './routes/_app/maintenance'
 import { Route as AppInspectionsRouteImport } from './routes/_app/inspections'
+import { Route as AppFormDesignRouteImport } from './routes/_app/form-design'
 import { Route as AppDriversRouteImport } from './routes/_app/drivers'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app/clients'
@@ -29,6 +30,21 @@ import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAiRouteImport } from './routes/_app/ai'
 import { Route as AppBookingsIndexRouteImport } from './routes/_app/bookings.index'
 import { Route as AppBookingsNewRouteImport } from './routes/_app/bookings/new'
+import { Route as AppAiWhatsappRouteImport } from './routes/_app/ai/whatsapp'
+import { Route as AppAiVoiceBookingRouteImport } from './routes/_app/ai/voice-booking'
+import { Route as AppAiTranslateRouteImport } from './routes/_app/ai/translate'
+import { Route as AppAiSummarizeRouteImport } from './routes/_app/ai/summarize'
+import { Route as AppAiSmartSearchRouteImport } from './routes/_app/ai/smart-search'
+import { Route as AppAiSignatureVerifyRouteImport } from './routes/_app/ai/signature-verify'
+import { Route as AppAiRiskRouteImport } from './routes/_app/ai/risk'
+import { Route as AppAiRecommendRouteImport } from './routes/_app/ai/recommend'
+import { Route as AppAiPricingRouteImport } from './routes/_app/ai/pricing'
+import { Route as AppAiOcrCnicRouteImport } from './routes/_app/ai/ocr-cnic'
+import { Route as AppAiMaintenanceRouteImport } from './routes/_app/ai/maintenance'
+import { Route as AppAiFraudRouteImport } from './routes/_app/ai/fraud'
+import { Route as AppAiForecastRouteImport } from './routes/_app/ai/forecast'
+import { Route as AppAiDamageRouteImport } from './routes/_app/ai/damage'
+import { Route as AppAiChatRouteImport } from './routes/_app/ai/chat'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -94,6 +110,11 @@ const AppInspectionsRoute = AppInspectionsRouteImport.update({
   path: '/inspections',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFormDesignRoute = AppFormDesignRouteImport.update({
+  id: '/form-design',
+  path: '/form-design',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDriversRoute = AppDriversRouteImport.update({
   id: '/drivers',
   path: '/drivers',
@@ -129,16 +150,92 @@ const AppBookingsNewRoute = AppBookingsNewRouteImport.update({
   path: '/bookings/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAiWhatsappRoute = AppAiWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiVoiceBookingRoute = AppAiVoiceBookingRouteImport.update({
+  id: '/voice-booking',
+  path: '/voice-booking',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiTranslateRoute = AppAiTranslateRouteImport.update({
+  id: '/translate',
+  path: '/translate',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiSummarizeRoute = AppAiSummarizeRouteImport.update({
+  id: '/summarize',
+  path: '/summarize',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiSmartSearchRoute = AppAiSmartSearchRouteImport.update({
+  id: '/smart-search',
+  path: '/smart-search',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiSignatureVerifyRoute = AppAiSignatureVerifyRouteImport.update({
+  id: '/signature-verify',
+  path: '/signature-verify',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiRiskRoute = AppAiRiskRouteImport.update({
+  id: '/risk',
+  path: '/risk',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiRecommendRoute = AppAiRecommendRouteImport.update({
+  id: '/recommend',
+  path: '/recommend',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiPricingRoute = AppAiPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiOcrCnicRoute = AppAiOcrCnicRouteImport.update({
+  id: '/ocr-cnic',
+  path: '/ocr-cnic',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiMaintenanceRoute = AppAiMaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiFraudRoute = AppAiFraudRouteImport.update({
+  id: '/fraud',
+  path: '/fraud',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiForecastRoute = AppAiForecastRouteImport.update({
+  id: '/forecast',
+  path: '/forecast',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiDamageRoute = AppAiDamageRouteImport.update({
+  id: '/damage',
+  path: '/damage',
+  getParentRoute: () => AppAiRoute,
+} as any)
+const AppAiChatRoute = AppAiChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AppAiRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/ai': typeof AppAiRoute
+  '/ai': typeof AppAiRouteWithChildren
   '/calendar': typeof AppCalendarRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
   '/drivers': typeof AppDriversRoute
+  '/form-design': typeof AppFormDesignRoute
   '/inspections': typeof AppInspectionsRoute
   '/maintenance': typeof AppMaintenanceRoute
   '/payments': typeof AppPaymentsRoute
@@ -148,6 +245,21 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/templates': typeof AppTemplatesRoute
   '/vehicles': typeof AppVehiclesRoute
+  '/ai/chat': typeof AppAiChatRoute
+  '/ai/damage': typeof AppAiDamageRoute
+  '/ai/forecast': typeof AppAiForecastRoute
+  '/ai/fraud': typeof AppAiFraudRoute
+  '/ai/maintenance': typeof AppAiMaintenanceRoute
+  '/ai/ocr-cnic': typeof AppAiOcrCnicRoute
+  '/ai/pricing': typeof AppAiPricingRoute
+  '/ai/recommend': typeof AppAiRecommendRoute
+  '/ai/risk': typeof AppAiRiskRoute
+  '/ai/signature-verify': typeof AppAiSignatureVerifyRoute
+  '/ai/smart-search': typeof AppAiSmartSearchRoute
+  '/ai/summarize': typeof AppAiSummarizeRoute
+  '/ai/translate': typeof AppAiTranslateRoute
+  '/ai/voice-booking': typeof AppAiVoiceBookingRoute
+  '/ai/whatsapp': typeof AppAiWhatsappRoute
   '/bookings/new': typeof AppBookingsNewRoute
   '/bookings/': typeof AppBookingsIndexRoute
 }
@@ -155,11 +267,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/ai': typeof AppAiRoute
+  '/ai': typeof AppAiRouteWithChildren
   '/calendar': typeof AppCalendarRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
   '/drivers': typeof AppDriversRoute
+  '/form-design': typeof AppFormDesignRoute
   '/inspections': typeof AppInspectionsRoute
   '/maintenance': typeof AppMaintenanceRoute
   '/payments': typeof AppPaymentsRoute
@@ -169,6 +282,21 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/templates': typeof AppTemplatesRoute
   '/vehicles': typeof AppVehiclesRoute
+  '/ai/chat': typeof AppAiChatRoute
+  '/ai/damage': typeof AppAiDamageRoute
+  '/ai/forecast': typeof AppAiForecastRoute
+  '/ai/fraud': typeof AppAiFraudRoute
+  '/ai/maintenance': typeof AppAiMaintenanceRoute
+  '/ai/ocr-cnic': typeof AppAiOcrCnicRoute
+  '/ai/pricing': typeof AppAiPricingRoute
+  '/ai/recommend': typeof AppAiRecommendRoute
+  '/ai/risk': typeof AppAiRiskRoute
+  '/ai/signature-verify': typeof AppAiSignatureVerifyRoute
+  '/ai/smart-search': typeof AppAiSmartSearchRoute
+  '/ai/summarize': typeof AppAiSummarizeRoute
+  '/ai/translate': typeof AppAiTranslateRoute
+  '/ai/voice-booking': typeof AppAiVoiceBookingRoute
+  '/ai/whatsapp': typeof AppAiWhatsappRoute
   '/bookings/new': typeof AppBookingsNewRoute
   '/bookings': typeof AppBookingsIndexRoute
 }
@@ -178,11 +306,12 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/_app/ai': typeof AppAiRoute
+  '/_app/ai': typeof AppAiRouteWithChildren
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/drivers': typeof AppDriversRoute
+  '/_app/form-design': typeof AppFormDesignRoute
   '/_app/inspections': typeof AppInspectionsRoute
   '/_app/maintenance': typeof AppMaintenanceRoute
   '/_app/payments': typeof AppPaymentsRoute
@@ -192,6 +321,21 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/templates': typeof AppTemplatesRoute
   '/_app/vehicles': typeof AppVehiclesRoute
+  '/_app/ai/chat': typeof AppAiChatRoute
+  '/_app/ai/damage': typeof AppAiDamageRoute
+  '/_app/ai/forecast': typeof AppAiForecastRoute
+  '/_app/ai/fraud': typeof AppAiFraudRoute
+  '/_app/ai/maintenance': typeof AppAiMaintenanceRoute
+  '/_app/ai/ocr-cnic': typeof AppAiOcrCnicRoute
+  '/_app/ai/pricing': typeof AppAiPricingRoute
+  '/_app/ai/recommend': typeof AppAiRecommendRoute
+  '/_app/ai/risk': typeof AppAiRiskRoute
+  '/_app/ai/signature-verify': typeof AppAiSignatureVerifyRoute
+  '/_app/ai/smart-search': typeof AppAiSmartSearchRoute
+  '/_app/ai/summarize': typeof AppAiSummarizeRoute
+  '/_app/ai/translate': typeof AppAiTranslateRoute
+  '/_app/ai/voice-booking': typeof AppAiVoiceBookingRoute
+  '/_app/ai/whatsapp': typeof AppAiWhatsappRoute
   '/_app/bookings/new': typeof AppBookingsNewRoute
   '/_app/bookings/': typeof AppBookingsIndexRoute
 }
@@ -206,6 +350,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/dashboard'
     | '/drivers'
+    | '/form-design'
     | '/inspections'
     | '/maintenance'
     | '/payments'
@@ -215,6 +360,21 @@ export interface FileRouteTypes {
     | '/settings'
     | '/templates'
     | '/vehicles'
+    | '/ai/chat'
+    | '/ai/damage'
+    | '/ai/forecast'
+    | '/ai/fraud'
+    | '/ai/maintenance'
+    | '/ai/ocr-cnic'
+    | '/ai/pricing'
+    | '/ai/recommend'
+    | '/ai/risk'
+    | '/ai/signature-verify'
+    | '/ai/smart-search'
+    | '/ai/summarize'
+    | '/ai/translate'
+    | '/ai/voice-booking'
+    | '/ai/whatsapp'
     | '/bookings/new'
     | '/bookings/'
   fileRoutesByTo: FileRoutesByTo
@@ -227,6 +387,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/dashboard'
     | '/drivers'
+    | '/form-design'
     | '/inspections'
     | '/maintenance'
     | '/payments'
@@ -236,6 +397,21 @@ export interface FileRouteTypes {
     | '/settings'
     | '/templates'
     | '/vehicles'
+    | '/ai/chat'
+    | '/ai/damage'
+    | '/ai/forecast'
+    | '/ai/fraud'
+    | '/ai/maintenance'
+    | '/ai/ocr-cnic'
+    | '/ai/pricing'
+    | '/ai/recommend'
+    | '/ai/risk'
+    | '/ai/signature-verify'
+    | '/ai/smart-search'
+    | '/ai/summarize'
+    | '/ai/translate'
+    | '/ai/voice-booking'
+    | '/ai/whatsapp'
     | '/bookings/new'
     | '/bookings'
   id:
@@ -249,6 +425,7 @@ export interface FileRouteTypes {
     | '/_app/clients'
     | '/_app/dashboard'
     | '/_app/drivers'
+    | '/_app/form-design'
     | '/_app/inspections'
     | '/_app/maintenance'
     | '/_app/payments'
@@ -258,6 +435,21 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/templates'
     | '/_app/vehicles'
+    | '/_app/ai/chat'
+    | '/_app/ai/damage'
+    | '/_app/ai/forecast'
+    | '/_app/ai/fraud'
+    | '/_app/ai/maintenance'
+    | '/_app/ai/ocr-cnic'
+    | '/_app/ai/pricing'
+    | '/_app/ai/recommend'
+    | '/_app/ai/risk'
+    | '/_app/ai/signature-verify'
+    | '/_app/ai/smart-search'
+    | '/_app/ai/summarize'
+    | '/_app/ai/translate'
+    | '/_app/ai/voice-booking'
+    | '/_app/ai/whatsapp'
     | '/_app/bookings/new'
     | '/_app/bookings/'
   fileRoutesById: FileRoutesById
@@ -362,6 +554,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInspectionsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/form-design': {
+      id: '/_app/form-design'
+      path: '/form-design'
+      fullPath: '/form-design'
+      preLoaderRoute: typeof AppFormDesignRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/drivers': {
       id: '/_app/drivers'
       path: '/drivers'
@@ -411,15 +610,159 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBookingsNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/ai/whatsapp': {
+      id: '/_app/ai/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/ai/whatsapp'
+      preLoaderRoute: typeof AppAiWhatsappRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/voice-booking': {
+      id: '/_app/ai/voice-booking'
+      path: '/voice-booking'
+      fullPath: '/ai/voice-booking'
+      preLoaderRoute: typeof AppAiVoiceBookingRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/translate': {
+      id: '/_app/ai/translate'
+      path: '/translate'
+      fullPath: '/ai/translate'
+      preLoaderRoute: typeof AppAiTranslateRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/summarize': {
+      id: '/_app/ai/summarize'
+      path: '/summarize'
+      fullPath: '/ai/summarize'
+      preLoaderRoute: typeof AppAiSummarizeRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/smart-search': {
+      id: '/_app/ai/smart-search'
+      path: '/smart-search'
+      fullPath: '/ai/smart-search'
+      preLoaderRoute: typeof AppAiSmartSearchRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/signature-verify': {
+      id: '/_app/ai/signature-verify'
+      path: '/signature-verify'
+      fullPath: '/ai/signature-verify'
+      preLoaderRoute: typeof AppAiSignatureVerifyRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/risk': {
+      id: '/_app/ai/risk'
+      path: '/risk'
+      fullPath: '/ai/risk'
+      preLoaderRoute: typeof AppAiRiskRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/recommend': {
+      id: '/_app/ai/recommend'
+      path: '/recommend'
+      fullPath: '/ai/recommend'
+      preLoaderRoute: typeof AppAiRecommendRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/pricing': {
+      id: '/_app/ai/pricing'
+      path: '/pricing'
+      fullPath: '/ai/pricing'
+      preLoaderRoute: typeof AppAiPricingRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/ocr-cnic': {
+      id: '/_app/ai/ocr-cnic'
+      path: '/ocr-cnic'
+      fullPath: '/ai/ocr-cnic'
+      preLoaderRoute: typeof AppAiOcrCnicRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/maintenance': {
+      id: '/_app/ai/maintenance'
+      path: '/maintenance'
+      fullPath: '/ai/maintenance'
+      preLoaderRoute: typeof AppAiMaintenanceRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/fraud': {
+      id: '/_app/ai/fraud'
+      path: '/fraud'
+      fullPath: '/ai/fraud'
+      preLoaderRoute: typeof AppAiFraudRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/forecast': {
+      id: '/_app/ai/forecast'
+      path: '/forecast'
+      fullPath: '/ai/forecast'
+      preLoaderRoute: typeof AppAiForecastRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/damage': {
+      id: '/_app/ai/damage'
+      path: '/damage'
+      fullPath: '/ai/damage'
+      preLoaderRoute: typeof AppAiDamageRouteImport
+      parentRoute: typeof AppAiRoute
+    }
+    '/_app/ai/chat': {
+      id: '/_app/ai/chat'
+      path: '/chat'
+      fullPath: '/ai/chat'
+      preLoaderRoute: typeof AppAiChatRouteImport
+      parentRoute: typeof AppAiRoute
+    }
   }
 }
 
+interface AppAiRouteChildren {
+  AppAiChatRoute: typeof AppAiChatRoute
+  AppAiDamageRoute: typeof AppAiDamageRoute
+  AppAiForecastRoute: typeof AppAiForecastRoute
+  AppAiFraudRoute: typeof AppAiFraudRoute
+  AppAiMaintenanceRoute: typeof AppAiMaintenanceRoute
+  AppAiOcrCnicRoute: typeof AppAiOcrCnicRoute
+  AppAiPricingRoute: typeof AppAiPricingRoute
+  AppAiRecommendRoute: typeof AppAiRecommendRoute
+  AppAiRiskRoute: typeof AppAiRiskRoute
+  AppAiSignatureVerifyRoute: typeof AppAiSignatureVerifyRoute
+  AppAiSmartSearchRoute: typeof AppAiSmartSearchRoute
+  AppAiSummarizeRoute: typeof AppAiSummarizeRoute
+  AppAiTranslateRoute: typeof AppAiTranslateRoute
+  AppAiVoiceBookingRoute: typeof AppAiVoiceBookingRoute
+  AppAiWhatsappRoute: typeof AppAiWhatsappRoute
+}
+
+const AppAiRouteChildren: AppAiRouteChildren = {
+  AppAiChatRoute: AppAiChatRoute,
+  AppAiDamageRoute: AppAiDamageRoute,
+  AppAiForecastRoute: AppAiForecastRoute,
+  AppAiFraudRoute: AppAiFraudRoute,
+  AppAiMaintenanceRoute: AppAiMaintenanceRoute,
+  AppAiOcrCnicRoute: AppAiOcrCnicRoute,
+  AppAiPricingRoute: AppAiPricingRoute,
+  AppAiRecommendRoute: AppAiRecommendRoute,
+  AppAiRiskRoute: AppAiRiskRoute,
+  AppAiSignatureVerifyRoute: AppAiSignatureVerifyRoute,
+  AppAiSmartSearchRoute: AppAiSmartSearchRoute,
+  AppAiSummarizeRoute: AppAiSummarizeRoute,
+  AppAiTranslateRoute: AppAiTranslateRoute,
+  AppAiVoiceBookingRoute: AppAiVoiceBookingRoute,
+  AppAiWhatsappRoute: AppAiWhatsappRoute,
+}
+
+const AppAiRouteWithChildren = AppAiRoute._addFileChildren(AppAiRouteChildren)
+
 interface AppRouteChildren {
-  AppAiRoute: typeof AppAiRoute
+  AppAiRoute: typeof AppAiRouteWithChildren
   AppCalendarRoute: typeof AppCalendarRoute
   AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDriversRoute: typeof AppDriversRoute
+  AppFormDesignRoute: typeof AppFormDesignRoute
   AppInspectionsRoute: typeof AppInspectionsRoute
   AppMaintenanceRoute: typeof AppMaintenanceRoute
   AppPaymentsRoute: typeof AppPaymentsRoute
@@ -434,11 +777,12 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppAiRoute: AppAiRoute,
+  AppAiRoute: AppAiRouteWithChildren,
   AppCalendarRoute: AppCalendarRoute,
   AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDriversRoute: AppDriversRoute,
+  AppFormDesignRoute: AppFormDesignRoute,
   AppInspectionsRoute: AppInspectionsRoute,
   AppMaintenanceRoute: AppMaintenanceRoute,
   AppPaymentsRoute: AppPaymentsRoute,

@@ -327,15 +327,20 @@ export type Database = {
       }
       company_settings: {
         Row: {
+          accent_color: string | null
           address: string | null
           company_name: string
           email: string | null
           facebook_url: string | null
+          footer_subtext: string | null
+          footer_text: string | null
           form_banner: string | null
+          header_color: string | null
           id: boolean
           instagram_url: string | null
           logo_url: string | null
           phone: string | null
+          stars_text: string | null
           tagline: string | null
           tiktok_url: string | null
           updated_at: string
@@ -344,15 +349,20 @@ export type Database = {
           youtube_url: string | null
         }
         Insert: {
+          accent_color?: string | null
           address?: string | null
           company_name?: string
           email?: string | null
           facebook_url?: string | null
+          footer_subtext?: string | null
+          footer_text?: string | null
           form_banner?: string | null
+          header_color?: string | null
           id?: boolean
           instagram_url?: string | null
           logo_url?: string | null
           phone?: string | null
+          stars_text?: string | null
           tagline?: string | null
           tiktok_url?: string | null
           updated_at?: string
@@ -361,15 +371,20 @@ export type Database = {
           youtube_url?: string | null
         }
         Update: {
+          accent_color?: string | null
           address?: string | null
           company_name?: string
           email?: string | null
           facebook_url?: string | null
+          footer_subtext?: string | null
+          footer_text?: string | null
           form_banner?: string | null
+          header_color?: string | null
           id?: boolean
           instagram_url?: string | null
           logo_url?: string | null
           phone?: string | null
+          stars_text?: string | null
           tagline?: string | null
           tiktok_url?: string | null
           updated_at?: string

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,8 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Save, MessageCircle, Plus, Trash2, ImageDown, ArrowLeft, FileDown, Eye } from "lucide-react";
-import { openWhatsApp, shareBookingMessage } from "@/lib/whatsapp";
+import { Loader2, Plus, Trash2, ArrowLeft, FileDown } from "lucide-react";
 import { daysBetween, fmtDateTime, fmtMoney } from "@/lib/format";
 import logo from "@/assets/logo.jpg";
 
@@ -31,6 +30,11 @@ interface CompanySettings {
   tiktok_url: string | null;
   youtube_url: string | null;
   form_banner: string | null;
+  header_color: string | null;
+  accent_color: string | null;
+  footer_text: string | null;
+  footer_subtext: string | null;
+  stars_text: string | null;
 }
 
 const FALLBACK_COMPANY: CompanySettings = {
@@ -47,6 +51,11 @@ const FALLBACK_COMPANY: CompanySettings = {
   tiktok_url: "",
   youtube_url: "",
   form_banner: "ALL KINDS OF VEHICLES ARE AVAILABLE WITH DRIVERS FOR LOCAL AND OUTSTATION",
+  header_color: "#062A4D",
+  accent_color: "#B98A32",
+  footer_text: "Thank you",
+  footer_subtext: "FOR CHOOSING US",
+  stars_text: "★★★★★",
 };
 
 // Convert any image URL to base64 data URL so html2canvas never taints the canvas
@@ -66,7 +75,7 @@ async function toDataUrl(src: string): Promise<string> {
 }
 
 function NewBooking() {
-  const navigate = useNavigate();
+  
   const sigRef = useRef<SignatureCanvas | null>(null);
   const [company, setCompany] = useState<CompanySettings>(FALLBACK_COMPANY);
   const [logoData, setLogoData] = useState<string>(logo);
@@ -74,7 +83,7 @@ function NewBooking() {
   const [vehicles, setVehicles] = useState<{ id: string; make: string; model: string; year: number | null; color: string | null; registration_no: string; daily_rate: number }[]>([]);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<null | "image" | "pdf" | "preview">(null);
-  const [showPreview, setShowPreview] = useState(false);
+  
   const [form, setForm] = useState({
     client_id: "", vehicle_id: "",
     pickup_at: "", dropoff_at: "",
@@ -91,7 +100,7 @@ function NewBooking() {
       const [c, v, s] = await Promise.all([
         supabase.from("clients").select("id, full_name, phone, cnic, address, license_no").order("full_name"),
         supabase.from("vehicles").select("id, make, model, year, color, registration_no, daily_rate").eq("status", "available"),
-        supabase.from("company_settings").select("company_name, tagline, phone, whatsapp_number, email, address, website, logo_url, facebook_url, instagram_url, tiktok_url, youtube_url, form_banner").eq("id", true).maybeSingle(),
+        supabase.from("company_settings").select("*").eq("id", true).maybeSingle(),
       ]);
       setClients(c.data ?? []);
       setVehicles(v.data ?? []);
@@ -206,69 +215,42 @@ function NewBooking() {
     }
   };
 
-  const downloadBlob = async (blob: Blob, filename: string) => {
-    const file = new File([blob], filename, { type: blob.type });
-    const nav = navigator as Navigator & { canShare?: (d: { files?: File[] }) => boolean; share?: (d: { files?: File[]; title?: string }) => Promise<void> };
-    if (nav.canShare?.({ files: [file] })) {
-      try { await nav.share?.({ files: [file], title: filename }); return; } catch { /* fall through */ }
-    }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename; a.rel = "noopener";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-  };
 
-  const handleSave = async (action: "pdf" | "whatsapp" | "image") => {
+  const handleSave = async () => {
     if (!validateForm()) return;
     setSaving(true);
+    setBusy("pdf");
     const { data, error } = await supabase.from("bookings").insert([bookingPayload()]).select("booking_no").single();
     if (error || !data) {
-      setSaving(false);
+      setSaving(false); setBusy(null);
       toast.error(error?.message ?? "Failed to save");
       return;
     }
     toast.success(`Booking ${data.booking_no} created`);
-
     try {
-      if (action === "image") {
-        setBusy("image");
-        const canvas = await renderSheetToCanvas(data.booking_no);
-        const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b: Blob | null) => b ? res(b) : rej(new Error("blob")), "image/png", 1));
-        await downloadBlob(blob, `${data.booking_no}.png`);
-        toast.success("Image saved – check Downloads / Gallery");
-      }
-      if (action === "pdf") {
-        setBusy("pdf");
-        const canvas = await renderSheetToCanvas(data.booking_no);
-        const { default: jsPDF } = await import("jspdf");
-        const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-        const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const ratio = canvas.height / canvas.width;
-        const imgW = pageW;
-        const imgH = imgW * ratio;
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-        if (imgH <= pageH) pdf.addImage(dataUrl, "JPEG", 0, 0, imgW, imgH);
-        else pdf.addImage(dataUrl, "JPEG", 0, 0, imgW, imgH);
-        await downloadBlob(pdf.output("blob"), `${data.booking_no}.pdf`);
-        toast.success("Invoice PDF ready");
-      }
-      if (action === "whatsapp" && selClient) {
-        openWhatsApp(selClient.phone, shareBookingMessage({
-          bookingNo: data.booking_no, clientName: selClient.full_name,
-          vehicle: `${selVehicle!.make} ${selVehicle!.model} (${selVehicle!.registration_no})`,
-          pickup: fmtDateTime(form.pickup_at), dropoff: fmtDateTime(form.dropoff_at),
-          total, advance, balance,
-        }));
-      }
+      const canvas = await renderSheetToCanvas(data.booking_no);
+      const { default: jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const ratio = canvas.height / canvas.width;
+      const imgH = pageW * ratio;
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      pdf.addImage(dataUrl, "JPEG", 0, 0, pageW, imgH);
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.booking_no}.pdf`;
+      a.rel = "noopener";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      toast.success("Invoice PDF downloaded");
     } catch (e) {
       console.error(e);
-      toast.error("Export failed. Please try again.");
+      toast.error("PDF export failed. Please retry.");
     } finally {
       setBusy(null);
       setSaving(false);
-      if (action === "whatsapp") setTimeout(() => navigate({ to: "/bookings" }), 600);
     }
   };
 
@@ -278,7 +260,7 @@ function NewBooking() {
         <Link to="/bookings"><Button size="icon" variant="ghost"><ArrowLeft className="size-4" /></Button></Link>
         <div>
           <h1 className="text-2xl font-display font-bold">New Rental Agreement</h1>
-          <p className="text-sm text-muted-foreground">Fill the form, save, then download invoice as image or PDF.</p>
+          <p className="text-sm text-muted-foreground">Fill the form and one click saves + downloads the invoice PDF.</p>
         </div>
       </div>
 
@@ -365,37 +347,12 @@ function NewBooking() {
         </div>
 
         <div className="flex gap-2 flex-wrap pt-2">
-          <Button onClick={() => handleSave("pdf")} disabled={saving} className="bg-gradient-primary text-primary-foreground hover:opacity-90">
+          <Button onClick={handleSave} disabled={saving} className="bg-gradient-primary text-primary-foreground hover:opacity-90">
             {busy === "pdf" ? <Loader2 className="size-4 mr-2 animate-spin" /> : <FileDown className="size-4 mr-2" />}
             Save & Download PDF
           </Button>
-          <Button onClick={() => handleSave("image")} disabled={saving} className="bg-gradient-cta text-cta-foreground hover:opacity-90">
-            {busy === "image" ? <Loader2 className="size-4 mr-2 animate-spin" /> : <ImageDown className="size-4 mr-2" />}
-            Save Image to Phone
-          </Button>
-          <Button onClick={() => handleSave("whatsapp")} disabled={saving} variant="outline">
-            {saving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <MessageCircle className="size-4 mr-2" />}
-            Save + WhatsApp
-          </Button>
-          <Button type="button" variant="ghost" onClick={() => setShowPreview((s) => !s)}>
-            <Eye className="size-4 mr-2" /> {showPreview ? "Hide" : "Show"} Preview
-          </Button>
         </div>
       </Card>
-
-      {showPreview && (
-        <div className="rounded-lg border bg-secondary/40 p-3 overflow-x-auto">
-          <div className="text-sm font-semibold mb-2">Invoice preview</div>
-          <div
-            className="origin-top-left scale-[0.42] sm:scale-[0.6] md:scale-[0.78] h-[600px] sm:h-[750px] md:h-[920px]"
-            dangerouslySetInnerHTML={{ __html: sheetHtml({
-              company, logoSrc: logoData, bookingNo: "S.No",
-              formDate, selClient, selVehicle, form, days, total, advance, balance, totalReading,
-              customFields, signature: "",
-            }) }}
-          />
-        </div>
-      )}
     </div>
   );
 }
