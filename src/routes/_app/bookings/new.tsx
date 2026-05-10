@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,7 +75,7 @@ async function toDataUrl(src: string): Promise<string> {
 }
 
 function NewBooking() {
-  const navigate = useNavigate();
+  
   const sigRef = useRef<SignatureCanvas | null>(null);
   const [company, setCompany] = useState<CompanySettings>(FALLBACK_COMPANY);
   const [logoData, setLogoData] = useState<string>(logo);
@@ -83,7 +83,7 @@ function NewBooking() {
   const [vehicles, setVehicles] = useState<{ id: string; make: string; model: string; year: number | null; color: string | null; registration_no: string; daily_rate: number }[]>([]);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<null | "image" | "pdf" | "preview">(null);
-  const [showPreview, setShowPreview] = useState(false);
+  
   const [form, setForm] = useState({
     client_id: "", vehicle_id: "",
     pickup_at: "", dropoff_at: "",
