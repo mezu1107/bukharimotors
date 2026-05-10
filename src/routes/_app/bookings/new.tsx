@@ -30,6 +30,11 @@ interface CompanySettings {
   tiktok_url: string | null;
   youtube_url: string | null;
   form_banner: string | null;
+  header_color: string | null;
+  accent_color: string | null;
+  footer_text: string | null;
+  footer_subtext: string | null;
+  stars_text: string | null;
 }
 
 const FALLBACK_COMPANY: CompanySettings = {
@@ -46,6 +51,11 @@ const FALLBACK_COMPANY: CompanySettings = {
   tiktok_url: "",
   youtube_url: "",
   form_banner: "ALL KINDS OF VEHICLES ARE AVAILABLE WITH DRIVERS FOR LOCAL AND OUTSTATION",
+  header_color: "#062A4D",
+  accent_color: "#B98A32",
+  footer_text: "Thank you",
+  footer_subtext: "FOR CHOOSING US",
+  stars_text: "★★★★★",
 };
 
 // Convert any image URL to base64 data URL so html2canvas never taints the canvas
