@@ -100,7 +100,7 @@ function NewBooking() {
       const [c, v, s] = await Promise.all([
         supabase.from("clients").select("id, full_name, phone, cnic, address, license_no").order("full_name"),
         supabase.from("vehicles").select("id, make, model, year, color, registration_no, daily_rate").eq("status", "available"),
-        supabase.from("company_settings").select("company_name, tagline, phone, whatsapp_number, email, address, website, logo_url, facebook_url, instagram_url, tiktok_url, youtube_url, form_banner").eq("id", true).maybeSingle(),
+        supabase.from("company_settings").select("*").eq("id", true).maybeSingle(),
       ]);
       setClients(c.data ?? []);
       setVehicles(v.data ?? []);
