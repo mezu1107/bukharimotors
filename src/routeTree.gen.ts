@@ -22,6 +22,7 @@ import { Route as AppPromotionsRouteImport } from './routes/_app/promotions'
 import { Route as AppPaymentsRouteImport } from './routes/_app/payments'
 import { Route as AppMaintenanceRouteImport } from './routes/_app/maintenance'
 import { Route as AppInspectionsRouteImport } from './routes/_app/inspections'
+import { Route as AppFormDesignRouteImport } from './routes/_app/form-design'
 import { Route as AppDriversRouteImport } from './routes/_app/drivers'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app/clients'
@@ -107,6 +108,11 @@ const AppMaintenanceRoute = AppMaintenanceRouteImport.update({
 const AppInspectionsRoute = AppInspectionsRouteImport.update({
   id: '/inspections',
   path: '/inspections',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFormDesignRoute = AppFormDesignRouteImport.update({
+  id: '/form-design',
+  path: '/form-design',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDriversRoute = AppDriversRouteImport.update({
@@ -229,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
   '/drivers': typeof AppDriversRoute
+  '/form-design': typeof AppFormDesignRoute
   '/inspections': typeof AppInspectionsRoute
   '/maintenance': typeof AppMaintenanceRoute
   '/payments': typeof AppPaymentsRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
   '/drivers': typeof AppDriversRoute
+  '/form-design': typeof AppFormDesignRoute
   '/inspections': typeof AppInspectionsRoute
   '/maintenance': typeof AppMaintenanceRoute
   '/payments': typeof AppPaymentsRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/drivers': typeof AppDriversRoute
+  '/_app/form-design': typeof AppFormDesignRoute
   '/_app/inspections': typeof AppInspectionsRoute
   '/_app/maintenance': typeof AppMaintenanceRoute
   '/_app/payments': typeof AppPaymentsRoute
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/dashboard'
     | '/drivers'
+    | '/form-design'
     | '/inspections'
     | '/maintenance'
     | '/payments'
@@ -377,6 +387,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/dashboard'
     | '/drivers'
+    | '/form-design'
     | '/inspections'
     | '/maintenance'
     | '/payments'
@@ -414,6 +425,7 @@ export interface FileRouteTypes {
     | '/_app/clients'
     | '/_app/dashboard'
     | '/_app/drivers'
+    | '/_app/form-design'
     | '/_app/inspections'
     | '/_app/maintenance'
     | '/_app/payments'
@@ -540,6 +552,13 @@ declare module '@tanstack/react-router' {
       path: '/inspections'
       fullPath: '/inspections'
       preLoaderRoute: typeof AppInspectionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/form-design': {
+      id: '/_app/form-design'
+      path: '/form-design'
+      fullPath: '/form-design'
+      preLoaderRoute: typeof AppFormDesignRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/drivers': {
@@ -743,6 +762,7 @@ interface AppRouteChildren {
   AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDriversRoute: typeof AppDriversRoute
+  AppFormDesignRoute: typeof AppFormDesignRoute
   AppInspectionsRoute: typeof AppInspectionsRoute
   AppMaintenanceRoute: typeof AppMaintenanceRoute
   AppPaymentsRoute: typeof AppPaymentsRoute
@@ -762,6 +782,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDriversRoute: AppDriversRoute,
+  AppFormDesignRoute: AppFormDesignRoute,
   AppInspectionsRoute: AppInspectionsRoute,
   AppMaintenanceRoute: AppMaintenanceRoute,
   AppPaymentsRoute: AppPaymentsRoute,

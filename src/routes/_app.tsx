@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Car, Users, UserCog, CalendarDays, Wrench, FileText,
   Bell, Settings2, BarChart3, Gift, ClipboardCheck, Receipt, Menu, X,
-  LogOut, Loader2, Sparkles,
+  LogOut, Loader2, Sparkles, Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.jpg";
@@ -31,6 +31,7 @@ const NAV = [
   { to: "/promotions" as const, label: "Loyalty & Promos", icon: Gift },
   { to: "/reports" as const, label: "Reports", icon: BarChart3 },
   { to: "/templates" as const, label: "Form Templates", icon: Settings2 },
+  { to: "/form-design" as const, label: "Form Design", icon: Palette },
   { to: "/settings" as const, label: "Settings", icon: Settings2 },
 ];
 
