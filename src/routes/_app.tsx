@@ -84,10 +84,7 @@ function AppShell() {
               <Icon className="size-4" />
               {item.label}
               {active && (
-                <motion.div
-                  layoutId="active-pill"
-                  className="ml-auto size-1.5 rounded-full bg-sidebar-primary"
-                />
+                <span className="ml-auto size-1.5 rounded-full bg-sidebar-primary" />
               )}
             </Link>
           );
