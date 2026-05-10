@@ -9,8 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Save, MessageCircle, Plus, Trash2, ImageDown, ArrowLeft, FileDown, Eye } from "lucide-react";
-import { openWhatsApp, shareBookingMessage } from "@/lib/whatsapp";
+import { Loader2, Plus, Trash2, ArrowLeft, FileDown } from "lucide-react";
 import { daysBetween, fmtDateTime, fmtMoney } from "@/lib/format";
 import logo from "@/assets/logo.jpg";
 
