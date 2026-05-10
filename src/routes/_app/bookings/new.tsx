@@ -359,37 +359,12 @@ function NewBooking() {
         </div>
 
         <div className="flex gap-2 flex-wrap pt-2">
-          <Button onClick={() => handleSave("pdf")} disabled={saving} className="bg-gradient-primary text-primary-foreground hover:opacity-90">
+          <Button onClick={handleSave} disabled={saving} className="bg-gradient-primary text-primary-foreground hover:opacity-90">
             {busy === "pdf" ? <Loader2 className="size-4 mr-2 animate-spin" /> : <FileDown className="size-4 mr-2" />}
             Save & Download PDF
           </Button>
-          <Button onClick={() => handleSave("image")} disabled={saving} className="bg-gradient-cta text-cta-foreground hover:opacity-90">
-            {busy === "image" ? <Loader2 className="size-4 mr-2 animate-spin" /> : <ImageDown className="size-4 mr-2" />}
-            Save Image to Phone
-          </Button>
-          <Button onClick={() => handleSave("whatsapp")} disabled={saving} variant="outline">
-            {saving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <MessageCircle className="size-4 mr-2" />}
-            Save + WhatsApp
-          </Button>
-          <Button type="button" variant="ghost" onClick={() => setShowPreview((s) => !s)}>
-            <Eye className="size-4 mr-2" /> {showPreview ? "Hide" : "Show"} Preview
-          </Button>
         </div>
       </Card>
-
-      {showPreview && (
-        <div className="rounded-lg border bg-secondary/40 p-3 overflow-x-auto">
-          <div className="text-sm font-semibold mb-2">Invoice preview</div>
-          <div
-            className="origin-top-left scale-[0.42] sm:scale-[0.6] md:scale-[0.78] h-[600px] sm:h-[750px] md:h-[920px]"
-            dangerouslySetInnerHTML={{ __html: sheetHtml({
-              company, logoSrc: logoData, bookingNo: "S.No",
-              formDate, selClient, selVehicle, form, days, total, advance, balance, totalReading,
-              customFields, signature: "",
-            }) }}
-          />
-        </div>
-      )}
     </div>
   );
 }
