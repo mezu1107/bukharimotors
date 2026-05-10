@@ -228,56 +228,41 @@ function NewBooking() {
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   };
 
-  const handleSave = async (action: "pdf" | "whatsapp" | "image") => {
+  const handleSave = async () => {
     if (!validateForm()) return;
     setSaving(true);
+    setBusy("pdf");
     const { data, error } = await supabase.from("bookings").insert([bookingPayload()]).select("booking_no").single();
     if (error || !data) {
-      setSaving(false);
+      setSaving(false); setBusy(null);
       toast.error(error?.message ?? "Failed to save");
       return;
     }
     toast.success(`Booking ${data.booking_no} created`);
-
     try {
-      if (action === "image") {
-        setBusy("image");
-        const canvas = await renderSheetToCanvas(data.booking_no);
-        const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b: Blob | null) => b ? res(b) : rej(new Error("blob")), "image/png", 1));
-        await downloadBlob(blob, `${data.booking_no}.png`);
-        toast.success("Image saved – check Downloads / Gallery");
-      }
-      if (action === "pdf") {
-        setBusy("pdf");
-        const canvas = await renderSheetToCanvas(data.booking_no);
-        const { default: jsPDF } = await import("jspdf");
-        const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-        const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const ratio = canvas.height / canvas.width;
-        const imgW = pageW;
-        const imgH = imgW * ratio;
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-        if (imgH <= pageH) pdf.addImage(dataUrl, "JPEG", 0, 0, imgW, imgH);
-        else pdf.addImage(dataUrl, "JPEG", 0, 0, imgW, imgH);
-        await downloadBlob(pdf.output("blob"), `${data.booking_no}.pdf`);
-        toast.success("Invoice PDF ready");
-      }
-      if (action === "whatsapp" && selClient) {
-        openWhatsApp(selClient.phone, shareBookingMessage({
-          bookingNo: data.booking_no, clientName: selClient.full_name,
-          vehicle: `${selVehicle!.make} ${selVehicle!.model} (${selVehicle!.registration_no})`,
-          pickup: fmtDateTime(form.pickup_at), dropoff: fmtDateTime(form.dropoff_at),
-          total, advance, balance,
-        }));
-      }
+      const canvas = await renderSheetToCanvas(data.booking_no);
+      const { default: jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const ratio = canvas.height / canvas.width;
+      const imgH = pageW * ratio;
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      pdf.addImage(dataUrl, "JPEG", 0, 0, pageW, imgH);
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.booking_no}.pdf`;
+      a.rel = "noopener";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      toast.success("Invoice PDF downloaded");
     } catch (e) {
       console.error(e);
-      toast.error("Export failed. Please try again.");
+      toast.error("PDF export failed. Please retry.");
     } finally {
       setBusy(null);
       setSaving(false);
-      if (action === "whatsapp") setTimeout(() => navigate({ to: "/bookings" }), 600);
     }
   };
 
