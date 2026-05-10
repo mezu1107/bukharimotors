@@ -260,7 +260,7 @@ function NewBooking() {
         <Link to="/bookings"><Button size="icon" variant="ghost"><ArrowLeft className="size-4" /></Button></Link>
         <div>
           <h1 className="text-2xl font-display font-bold">New Rental Agreement</h1>
-          <p className="text-sm text-muted-foreground">Fill the form, save, then download invoice as image or PDF.</p>
+          <p className="text-sm text-muted-foreground">Fill the form and one click saves + downloads the invoice PDF.</p>
         </div>
       </div>
 
