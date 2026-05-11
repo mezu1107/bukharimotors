@@ -53,7 +53,11 @@ function safeHex(value: unknown, fallback: string) {
 
 function hexToRgb(hex: string): [number, number, number] {
   const clean = hex.replace("#", "");
-  return [parseInt(clean.slice(0, 2), 16), parseInt(clean.slice(2, 4), 16), parseInt(clean.slice(4, 6), 16)];
+  return [
+    parseInt(clean.slice(0, 2), 16),
+    parseInt(clean.slice(2, 4), 16),
+    parseInt(clean.slice(4, 6), 16),
+  ];
 }
 
 function toNumber(value: unknown) {
@@ -110,7 +114,20 @@ async function registerFonts(pdf: import("jspdf").jsPDF) {
   }
 }
 
-function text(pdf: import("jspdf").jsPDF, value: string, x: number, y: number, options?: { size?: number; font?: string; style?: string; color?: string; align?: "left" | "center" | "right"; maxWidth?: number }) {
+function text(
+  pdf: import("jspdf").jsPDF,
+  value: string,
+  x: number,
+  y: number,
+  options?: {
+    size?: number;
+    font?: string;
+    style?: string;
+    color?: string;
+    align?: "left" | "center" | "right";
+    maxWidth?: number;
+  },
+) {
   const color = hexToRgb(options?.color ?? "#0F172A");
   pdf.setTextColor(...color);
   pdf.setFont(options?.font ?? "Inter", options?.style ?? "normal");
@@ -124,17 +141,34 @@ function text(pdf: import("jspdf").jsPDF, value: string, x: number, y: number, o
   }
 }
 
-function fieldRow(pdf: import("jspdf").jsPDF, label: string, value: string, x: number, y: number, w: number) {
+function fieldRow(
+  pdf: import("jspdf").jsPDF,
+  label: string,
+  value: string,
+  x: number,
+  y: number,
+  w: number,
+) {
   pdf.setDrawColor(148, 163, 184);
   pdf.setLineWidth(0.35);
   text(pdf, `${label}:`, x, y, { size: 8.8, font: "Poppins", style: "semibold" });
   const labelW = Math.min(pdf.getTextWidth(`${label}:`) + 2, w * 0.48);
   const lineX = x + labelW;
   pdf.line(lineX, y + 1.4, x + w, y + 1.4);
-  text(pdf, value || "", lineX + 1, y, { size: 8.8, font: "Inter", maxWidth: Math.max(10, w - labelW - 2) });
+  text(pdf, value || "", lineX + 1, y, {
+    size: 8.8,
+    font: "Inter",
+    maxWidth: Math.max(10, w - labelW - 2),
+  });
 }
 
-function drawRibbon(pdf: import("jspdf").jsPDF, y: number, color: string, accent: string, bottom = false) {
+function drawRibbon(
+  pdf: import("jspdf").jsPDF,
+  y: number,
+  color: string,
+  accent: string,
+  bottom = false,
+) {
   const w = 210;
   const main = hexToRgb(color);
   const gold = hexToRgb(accent);
@@ -162,7 +196,14 @@ function drawRibbon(pdf: import("jspdf").jsPDF, y: number, color: string, accent
   }
 }
 
-async function addImageSafe(pdf: import("jspdf").jsPDF, src: string, x: number, y: number, w: number, h?: number) {
+async function addImageSafe(
+  pdf: import("jspdf").jsPDF,
+  src: string,
+  x: number,
+  y: number,
+  w: number,
+  h?: number,
+) {
   try {
     const dataUrl = await toDataUrl(src);
     const props = pdf.getImageProperties(dataUrl);
@@ -191,39 +232,77 @@ async function drawPdf(p: SheetData, fileName: string) {
   drawRibbon(pdf, 0, header, accent);
 
   await addImageSafe(pdf, p.logoSrc || logo, 18, 15, 60);
-  text(pdf, p.company.tagline || FALLBACK.tagline, 48, 46, { size: 8, font: "Poppins", style: "semibold", align: "center" });
-  text(pdf, p.company.stars_text || FALLBACK.stars_text, 48, 53, { size: 13, color: "#F59E0B", align: "center" });
+  text(pdf, p.company.tagline || FALLBACK.tagline, 48, 46, {
+    size: 8,
+    font: "Poppins",
+    style: "semibold",
+    align: "center",
+  });
+  text(pdf, p.company.stars_text || FALLBACK.stars_text, 48, 53, {
+    size: 13,
+    color: "#F59E0B",
+    align: "center",
+  });
 
   const contactX = 108;
-  text(pdf, `☎ ${p.company.phone || p.company.whatsapp_number || ""}`, contactX, 25, { size: 10, font: "Poppins", style: "bold", maxWidth: 80 });
+  text(pdf, `☎ ${p.company.phone || p.company.whatsapp_number || ""}`, contactX, 25, {
+    size: 10,
+    font: "Poppins",
+    style: "bold",
+    maxWidth: 80,
+  });
   if (p.company.email) text(pdf, `✉ ${p.company.email}`, contactX, 34, { size: 9, maxWidth: 80 });
-  if (p.company.website) text(pdf, `🌐 ${p.company.website}`, contactX, 42, { size: 9, maxWidth: 80 });
-  text(pdf, `📍 ${p.company.address || ""}`, contactX, p.company.website ? 50 : 42, { size: 9, maxWidth: 82 });
+  if (p.company.website)
+    text(pdf, `🌐 ${p.company.website}`, contactX, 42, { size: 9, maxWidth: 80 });
+  text(pdf, `📍 ${p.company.address || ""}`, contactX, p.company.website ? 50 : 42, {
+    size: 9,
+    maxWidth: 82,
+  });
 
   pdf.setFillColor(...headerRgb);
   pdf.roundedRect(18, 62, 174, 11, 2, 2, "F");
   pdf.setFillColor(...accentRgb);
   pdf.triangle(18, 62, 26, 67.5, 18, 73, "F");
   pdf.triangle(192, 62, 184, 67.5, 192, 73, "F");
-  text(pdf, p.company.form_banner || FALLBACK.form_banner, pageW / 2, 69.5, { size: 8.2, font: "Poppins", style: "bold", color: "#FFFFFF", align: "center", maxWidth: 154 });
+  text(pdf, p.company.form_banner || FALLBACK.form_banner, pageW / 2, 69.5, {
+    size: 8.2,
+    font: "Poppins",
+    style: "bold",
+    color: "#FFFFFF",
+    align: "center",
+    maxWidth: 154,
+  });
 
   const v = p.vehicle;
   const cli = p.client;
   const vehicleLine = v ? `${v.make ?? ""} ${v.model ?? ""} ${v.year ?? ""}`.trim() : "";
   const fields = [
-    ["S.No", p.bookingNo], ["Date", p.date],
-    ["Client Name", cli?.full_name ?? ""], ["Cell", cli?.phone ?? ""],
+    ["S.No", p.bookingNo],
+    ["Date", p.date],
+    ["Client Name", cli?.full_name ?? ""],
+    ["Cell", cli?.phone ?? ""],
     ["Address", cli?.address ?? "", "wide"],
-    ["Vehicle Make & Model", vehicleLine], ["Reg No", v?.registration_no ?? ""],
-    ["Booking From", p.pickupLoc], ["to", p.dropoffLoc],
-    ["Date-out", p.pickupAt], ["Date-in", p.dropoffAt],
-    ["Driver Name", p.driverName], ["Driver Cell", p.driverPhone],
-    ["ODO Reading out", p.odoOut], ["ODO Reading-in", p.odoIn],
+    ["Vehicle Make & Model", vehicleLine],
+    ["Reg No", v?.registration_no ?? ""],
+    ["Booking From", p.pickupLoc],
+    ["to", p.dropoffLoc],
+    ["Date-out", p.pickupAt],
+    ["Date-in", p.dropoffAt],
+    ["Driver Name", p.driverName],
+    ["Driver Cell", p.driverPhone],
+    ["ODO Reading out", p.odoOut],
+    ["ODO Reading-in", p.odoIn],
     ["Total Reading", p.totalReading ? `${p.totalReading} km` : p.days ? `${p.days} day(s)` : ""],
-    ["With Fuel or Without Fuel", p.fuel], ["Toll Tax", p.tollTax ? fmtMoney(p.tollTax) : ""],
-    ["Total Payment", p.total ? fmtMoney(p.total) : ""], ["Advance", p.advance ? fmtMoney(p.advance) : ""],
-    ["Balance", p.balance ? fmtMoney(p.balance) : ""], ["Prepared By", "Bukhari Motors"],
-    ...p.customFields.filter((f) => f.label).slice(0, 6).map((f) => [f.label, f.value]),
+    ["With Fuel or Without Fuel", p.fuel],
+    ["Toll Tax", p.tollTax ? fmtMoney(p.tollTax) : ""],
+    ["Total Payment", p.total ? fmtMoney(p.total) : ""],
+    ["Advance", p.advance ? fmtMoney(p.advance) : ""],
+    ["Balance", p.balance ? fmtMoney(p.balance) : ""],
+    ["Prepared By", "Bukhari Motors"],
+    ...p.customFields
+      .filter((f) => f.label)
+      .slice(0, 6)
+      .map((f) => [f.label, f.value]),
   ] as Array<[string, string, string?]>;
 
   let x = 18;
@@ -256,21 +335,43 @@ async function drawPdf(p: SheetData, fileName: string) {
   pdf.setFillColor(...accentRgb);
   pdf.rect(54, 265, 24, 1.5, "F");
   pdf.rect(132, 265, 24, 1.5, "F");
-  text(pdf, p.company.footer_text || FALLBACK.footer_text, pageW / 2, 268, { size: 24, font: "Poppins", color: accent, align: "center" });
-  text(pdf, p.company.footer_subtext || FALLBACK.footer_subtext, pageW / 2, 277, { size: 7.5, font: "Poppins", style: "bold", align: "center" });
+  text(pdf, p.company.footer_text || FALLBACK.footer_text, pageW / 2, 268, {
+    size: 24,
+    font: "Poppins",
+    color: accent,
+    align: "center",
+  });
+  text(pdf, p.company.footer_subtext || FALLBACK.footer_subtext, pageW / 2, 277, {
+    size: 7.5,
+    font: "Poppins",
+    style: "bold",
+    align: "center",
+  });
   drawRibbon(pdf, 285, header, accent, true);
 
   pdf.save(fileName);
 }
 
 export async function getBookingSheetData(bookingId: string): Promise<SheetData> {
-  const { data: b, error } = await supabase.from("bookings").select("*").eq("id", bookingId).maybeSingle();
+  const { data: b, error } = await supabase
+    .from("bookings")
+    .select("*")
+    .eq("id", bookingId)
+    .maybeSingle();
   if (error || !b) throw new Error(error?.message ?? "Booking not found");
 
   const [{ data: s }, { data: client }, { data: vehicle }] = await Promise.all([
     supabase.from("company_settings").select("*").eq("id", true).maybeSingle(),
-    supabase.from("clients").select("full_name,phone,address,cnic,license_no").eq("id", b.client_id).maybeSingle(),
-    supabase.from("vehicles").select("make,model,year,color,registration_no").eq("id", b.vehicle_id).maybeSingle(),
+    supabase
+      .from("clients")
+      .select("full_name,phone,address,cnic,license_no")
+      .eq("id", b.client_id)
+      .maybeSingle(),
+    supabase
+      .from("vehicles")
+      .select("make,model,year,color,registration_no")
+      .eq("id", b.vehicle_id)
+      .maybeSingle(),
   ]);
 
   const company = { ...FALLBACK, ...(s ?? {}) } as Record<string, string>;
