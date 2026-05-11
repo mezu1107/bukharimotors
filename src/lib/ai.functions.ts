@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type Feature =
   | "pricing"
@@ -77,12 +76,11 @@ interface AssistInput {
 }
 
 export const aiAssist = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: AssistInput) => {
     if (!data || typeof data.feature !== "string") throw new Error("Invalid input");
     return data;
   })
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("AI service is not configured");
     const cfg = PROMPTS[data.feature] ?? { system: "You are a helpful assistant.", model: undefined };
@@ -125,15 +123,7 @@ export const aiAssist = createServerFn({ method: "POST" })
       try { JSON.parse(jsonMatch[0]); parsedJson = jsonMatch[0]; } catch { /* ignore */ }
     }
 
-    // Log usage (don't fail if logging errors)
-    try {
-      await context.supabase.from("ai_runs").insert({
-        user_id: context.userId,
-        feature: data.feature,
-        input: { text: userText, hasImage: !!data.image },
-        output: { text },
-      });
-    } catch { /* ignore logging failure */ }
+    // Usage logging skipped (no auth context).
 
     return { text, parsedJson };
   });

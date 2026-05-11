@@ -6,8 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Loader2, Plus, Search, Trash2, MessageCircle } from "lucide-react";
+import { FileText, Loader2, Plus, Search, Trash2, MessageCircle, FileDown } from "lucide-react";
 import { toast } from "sonner";
+import { downloadBookingPdf } from "@/lib/booking-pdf";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import { openWhatsApp, shareBookingMessage } from "@/lib/whatsapp";
 
@@ -49,6 +50,18 @@ function BookingsPage() {
     if (!confirm("Delete this booking?")) return;
     const { error } = await supabase.from("bookings").delete().eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Deleted"); load(); }
+  };
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const download = async (id: string) => {
+    setDownloading(id);
+    try {
+      const no = await downloadBookingPdf(id);
+      toast.success(`Downloaded ${no}.pdf`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "PDF download failed");
+    } finally {
+      setDownloading(null);
+    }
   };
 
   const filtered = rows.filter((r) => {
@@ -109,6 +122,10 @@ function BookingsPage() {
                     <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
+                  <Button variant="outline" size="sm" disabled={downloading === r.id} onClick={() => download(r.id)}>
+                    {downloading === r.id ? <Loader2 className="size-4 mr-1 animate-spin" /> : <FileDown className="size-4 mr-1" />}
+                    PDF
+                  </Button>
                   {r.client && (
                     <Button variant="outline" size="sm" onClick={() => openWhatsApp(r.client!.phone, shareBookingMessage({
                       bookingNo: r.booking_no, clientName: r.client!.full_name,
