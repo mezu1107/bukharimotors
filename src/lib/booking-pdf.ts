@@ -137,7 +137,7 @@ function sheetHtml(p: SheetData) {
 
 async function renderToCanvas(html: string): Promise<HTMLCanvasElement> {
   const host = document.createElement("div");
-  host.style.cssText = "position:fixed;left:-10000px;top:0;background:#FFFFFF;z-index:-1;";
+  host.style.cssText = "position:fixed;left:-10000px;top:0;background:#FFFFFF;z-index:-1;border-color:#E2E8F0;color:#0F172A;";
   document.body.appendChild(host);
   host.innerHTML = html;
   const node = host.firstElementChild as HTMLElement;
