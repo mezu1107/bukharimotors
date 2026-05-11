@@ -123,15 +123,7 @@ export const aiAssist = createServerFn({ method: "POST" })
       try { JSON.parse(jsonMatch[0]); parsedJson = jsonMatch[0]; } catch { /* ignore */ }
     }
 
-    // Log usage (don't fail if logging errors)
-    try {
-      await context.supabase.from("ai_runs").insert({
-        user_id: context.userId,
-        feature: data.feature,
-        input: { text: userText, hasImage: !!data.image },
-        output: { text },
-      });
-    } catch { /* ignore logging failure */ }
+    // Usage logging skipped (no auth context).
 
     return { text, parsedJson };
   });
