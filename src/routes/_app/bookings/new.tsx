@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -10,75 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, ArrowLeft, FileDown } from "lucide-react";
-import { daysBetween, fmtDateTime, fmtMoney } from "@/lib/format";
-import logo from "@/assets/logo.jpg";
+import { daysBetween, fmtMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/bookings/new")({ component: NewBooking });
 
 interface CustomField { label: string; value: string }
-interface CompanySettings {
-  company_name: string;
-  tagline: string | null;
-  phone: string | null;
-  whatsapp_number: string | null;
-  email: string | null;
-  address: string | null;
-  website: string | null;
-  logo_url: string | null;
-  facebook_url: string | null;
-  instagram_url: string | null;
-  tiktok_url: string | null;
-  youtube_url: string | null;
-  form_banner: string | null;
-  header_color: string | null;
-  accent_color: string | null;
-  footer_text: string | null;
-  footer_subtext: string | null;
-  stars_text: string | null;
-}
-
-const FALLBACK_COMPANY: CompanySettings = {
-  company_name: "Bukhari Motors & Rent A Car",
-  tagline: "LUXURY | COMFORT | TRUST",
-  phone: "0321 5300920",
-  whatsapp_number: "0321 5300920",
-  email: "",
-  address: "G-6 Markaz, Melody Market Islamabad",
-  website: "",
-  logo_url: "",
-  facebook_url: "",
-  instagram_url: "",
-  tiktok_url: "",
-  youtube_url: "",
-  form_banner: "ALL KINDS OF VEHICLES ARE AVAILABLE WITH DRIVERS FOR LOCAL AND OUTSTATION",
-  header_color: "#062A4D",
-  accent_color: "#B98A32",
-  footer_text: "Thank you",
-  footer_subtext: "FOR CHOOSING US",
-  stars_text: "★★★★★",
-};
-
-// Convert any image URL to base64 data URL so html2canvas never taints the canvas
-async function toDataUrl(src: string): Promise<string> {
-  try {
-    const r = await fetch(src, { mode: "cors" });
-    const b = await r.blob();
-    return await new Promise((res, rej) => {
-      const fr = new FileReader();
-      fr.onload = () => res(fr.result as string);
-      fr.onerror = rej;
-      fr.readAsDataURL(b);
-    });
-  } catch {
-    return src;
-  }
-}
-
 function NewBooking() {
   
   const sigRef = useRef<SignatureCanvas | null>(null);
-  const [company, setCompany] = useState<CompanySettings>(FALLBACK_COMPANY);
-  const [logoData, setLogoData] = useState<string>(logo);
   const [clients, setClients] = useState<{ id: string; full_name: string; phone: string; cnic: string | null; address: string | null; license_no: string | null }[]>([]);
   const [vehicles, setVehicles] = useState<{ id: string; make: string; model: string; year: number | null; color: string | null; registration_no: string; daily_rate: number }[]>([]);
   const [saving, setSaving] = useState(false);
@@ -96,18 +35,12 @@ function NewBooking() {
 
   useEffect(() => {
     (async () => {
-      toDataUrl(logo).then(setLogoData);
-      const [c, v, s] = await Promise.all([
+      const [c, v] = await Promise.all([
         supabase.from("clients").select("id, full_name, phone, cnic, address, license_no").order("full_name"),
         supabase.from("vehicles").select("id, make, model, year, color, registration_no, daily_rate").eq("status", "available"),
-        supabase.from("company_settings").select("*").eq("id", true).maybeSingle(),
       ]);
       setClients(c.data ?? []);
       setVehicles(v.data ?? []);
-      if (s.data) {
-        setCompany({ ...FALLBACK_COMPANY, ...s.data });
-        if (s.data.logo_url) toDataUrl(s.data.logo_url).then(setLogoData);
-      }
       if (c.error) toast.error(c.error.message);
       if (v.error) toast.error(v.error.message);
     })();
@@ -124,7 +57,6 @@ function NewBooking() {
   const odoIn = parseFloat(form.odometer_in || "0");
   const odoOut = parseFloat(form.odometer_out || "0");
   const totalReading = odoIn && odoOut ? Math.max(0, odoIn - odoOut) : 0;
-  const formDate = useMemo(() => new Date().toISOString(), []);
 
   const validateForm = () => {
     if (!form.client_id || !form.vehicle_id || !form.pickup_at || !form.dropoff_at) {
@@ -168,53 +100,6 @@ function NewBooking() {
     terms_accepted: true,
     status: "confirmed" as const,
   });
-
-  // Render the rental sheet without html2canvas first; html2canvas cannot parse Tailwind v4 oklch() colors.
-  const renderSheetToCanvas = async (bookingNo: string) => {
-    await document.fonts?.ready;
-    const html = sheetHtml({
-      company, logoSrc: logoData, bookingNo, formDate,
-      selClient, selVehicle,
-      form, days, total, advance, balance, totalReading,
-      customFields, signature: sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : "",
-    });
-
-    try {
-      return await renderHtmlSheetWithSvg(html);
-    } catch {
-      // Fallback for browsers that block SVG foreignObject rendering.
-    }
-
-    const host = document.createElement("div");
-    host.style.position = "fixed";
-    host.style.left = "-10000px";
-    host.style.top = "0";
-    host.style.background = "#FFFFFF";
-    document.body.appendChild(host);
-    host.innerHTML = html;
-    const node = host.firstElementChild as HTMLElement;
-    try {
-      const { default: html2canvas } = await import("html2canvas");
-      await new Promise((r) => requestAnimationFrame(r));
-      return await html2canvas(node, {
-        scale: 2,
-        backgroundColor: "#FFFFFF",
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        windowWidth: 794,
-        onclone: (_doc, clonedNode) => {
-          clonedNode.querySelectorAll("*").forEach((el) => {
-            const node = el as HTMLElement;
-            node.style.color = node.style.color || "#0F172A";
-          });
-        },
-      });
-    } finally {
-      document.body.removeChild(host);
-    }
-  };
-
 
   const handleSave = async () => {
     if (!validateForm()) return;
@@ -341,155 +226,4 @@ function NewBooking() {
       </Card>
     </div>
   );
-}
-
-// ---- Inline-styled HTML so html2canvas reproduces it pixel-perfect ----
-function esc(s: string | null | undefined) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]!));
-}
-
-function renderHtmlSheetWithSvg(html: string): Promise<HTMLCanvasElement> {
-  const width = 794;
-  const height = 1123;
-  const scale = Math.min(2, Math.max(1.25, window.devicePixelRatio || 1));
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width * scale}" height="${height * scale}" viewBox="0 0 ${width} ${height}">
-    <foreignObject width="${width}" height="${height}">
-      <div xmlns="http://www.w3.org/1999/xhtml">${html}</div>
-    </foreignObject>
-  </svg>`;
-
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(width * scale);
-      canvas.height = Math.round(height * scale);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) { reject(new Error("Canvas not supported")); return; }
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(img.src);
-      resolve(canvas);
-    };
-    img.onerror = () => reject(new Error("SVG render failed"));
-    img.src = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
-  });
-}
-
-function fieldRow(label: string, value: string, opts?: { wide?: boolean }) {
-  const span = opts?.wide ? "1 / -1" : "auto";
-  return `<div style="grid-column:${span};display:flex;align-items:flex-end;gap:6px;min-width:0;">
-    <span style="font-weight:600;color:#0F172A;white-space:nowrap;font-size:13px;">${esc(label)}:</span>
-    <span style="flex:1;border-bottom:1.5px solid #94A3B8;min-height:20px;padding:0 4px 2px;font-weight:600;color:#0F172A;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(value)}</span>
-  </div>`;
-}
-
-function sheetHtml(p: {
-  company: CompanySettings; logoSrc: string; bookingNo: string; formDate: string;
-  selClient?: { full_name: string; phone: string; cnic: string | null; address: string | null; license_no: string | null };
-  selVehicle?: { make: string; model: string; year: number | null; color: string | null; registration_no: string };
-  form: { pickup_at: string; dropoff_at: string; pickup_location: string; dropoff_location: string; odometer_out: string; odometer_in: string; fuel_level_out: string; notes: string; driver_name: string; driver_phone: string; toll_tax: string };
-  days: number; total: number; advance: number; balance: number; totalReading: number;
-  customFields: CustomField[]; signature: string;
-}) {
-  const c = p.company;
-  const v = p.selVehicle;
-  const cli = p.selClient;
-  const date = fmtDateTime(p.formDate).split(",")[0];
-  const dateOut = p.form.pickup_at ? fmtDateTime(p.form.pickup_at).split(",")[0] : "";
-  const dateIn = p.form.dropoff_at ? fmtDateTime(p.form.dropoff_at).split(",")[0] : "";
-  const vehicleLine = v ? `${v.make} ${v.model} ${v.year ?? ""}`.trim() : "";
-
-  const fields = [
-    fieldRow("S.No", p.bookingNo),
-    fieldRow("Date", date),
-    fieldRow("Client Name", cli?.full_name ?? "", { wide: false }),
-    fieldRow("Cell", cli?.phone ?? ""),
-    fieldRow("Address", cli?.address ?? "", { wide: true }),
-    fieldRow("Vehicle Make & Model", vehicleLine),
-    fieldRow("Reg No", v?.registration_no ?? ""),
-    fieldRow("Booking From", p.form.pickup_location),
-    fieldRow("to", p.form.dropoff_location),
-    fieldRow("Date-out", dateOut),
-    fieldRow("Date-in", dateIn),
-    fieldRow("Driver Name", p.form.driver_name),
-    fieldRow("Driver Cell", p.form.driver_phone),
-    fieldRow("ODO Reading out", p.form.odometer_out),
-    fieldRow("ODO Reading-in", p.form.odometer_in),
-    fieldRow("Total Reading", p.totalReading ? String(p.totalReading) + " km" : (p.days ? `${p.days} day(s)` : "")),
-    fieldRow("With Fuel or Without Fuel", p.form.fuel_level_out),
-    fieldRow("Toll Tax", p.form.toll_tax ? fmtMoney(Number(p.form.toll_tax)) : ""),
-    fieldRow("Total Payment", p.total ? fmtMoney(p.total) : ""),
-    fieldRow("Advance", p.advance ? fmtMoney(p.advance) : ""),
-    fieldRow("Balance", p.balance ? fmtMoney(p.balance) : ""),
-    `<div style="grid-column:auto;display:flex;align-items:flex-end;gap:6px;">
-      <span style="font-weight:600;font-size:13px;">Client Signature:</span>
-      <span style="flex:1;border-bottom:1.5px solid #94A3B8;min-height:36px;display:flex;align-items:end;">
-        ${p.signature ? `<img src="${p.signature}" style="max-height:34px;max-width:100%;" />` : ""}
-      </span>
-    </div>`,
-    fieldRow("Prepared By", "Bukhari Motors"),
-    ...p.customFields.filter(f => f.label).slice(0, 6).map(f => fieldRow(f.label, f.value)),
-  ].join("");
-
-  const stars = "★★★★★";
-
-  return `<div class="bm-export-sheet" style="width:794px;min-height:1123px;background:#FFFFFF;color:#0F172A;font-family:Inter,Arial,sans-serif;padding:0;position:relative;box-sizing:border-box;overflow:hidden;">
-    <style>.bm-export-sheet,.bm-export-sheet *{border-color:#E2E8F0!important;outline-color:#2563EB!important;box-sizing:border-box;}</style>
-    <!-- Top decorative band -->
-    <div style="position:relative;height:30px;background:#FFFFFF;">
-      <div style="position:absolute;top:0;left:0;width:55%;height:18px;background:#062A4D;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%);"></div>
-      <div style="position:absolute;top:0;right:0;width:55%;height:18px;background:#062A4D;clip-path:polygon(22px 0,100% 0,100% 100%,0 100%);"></div>
-      <div style="position:absolute;top:18px;left:0;width:55%;height:6px;background:#B98A32;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);"></div>
-      <div style="position:absolute;top:18px;right:0;width:55%;height:6px;background:#B98A32;clip-path:polygon(14px 0,100% 0,100% 100%,0 100%);"></div>
-    </div>
-
-    <div style="padding:20px 36px 0;">
-      <!-- Header: logo + tagline + stars / contact -->
-      <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:center;">
-        <div>
-          <img src="${p.logoSrc}" alt="logo" crossorigin="anonymous" style="width:230px;height:auto;display:block;" />
-          <div style="font-family:Poppins,Arial,sans-serif;color:#0F172A;font-size:11px;font-weight:600;letter-spacing:5px;margin-top:4px;text-align:center;width:230px;">${esc(c.tagline ?? "")}</div>
-          <div style="margin-top:8px;font-size:22px;color:#F59E0B;letter-spacing:6px;text-align:center;width:230px;">${stars}</div>
-        </div>
-        <div style="text-align:left;font-size:14px;color:#0F172A;line-height:1.9;align-self:end;padding-bottom:6px;">
-          <div style="display:flex;align-items:center;gap:8px;"><span style="display:inline-flex;width:22px;height:22px;border-radius:50%;border:1.5px solid #062A4D;align-items:center;justify-content:center;color:#062A4D;font-weight:700;">☎</span><strong style="font-weight:700;">${esc(c.phone || c.whatsapp_number || "")}</strong></div>
-          ${c.email ? `<div style="display:flex;align-items:center;gap:8px;"><span style="color:#062A4D;">✉</span>${esc(c.email)}</div>` : ""}
-          ${c.website ? `<div style="display:flex;align-items:center;gap:8px;"><span style="color:#062A4D;">🌐</span>${esc(c.website)}</div>` : ""}
-          <div style="display:flex;align-items:flex-start;gap:8px;"><span style="color:#DC2626;font-size:18px;line-height:1;">📍</span><span>${esc(c.address ?? "")}</span></div>
-        </div>
-      </div>
-
-      <!-- Banner with diagonal cuts -->
-      <div style="margin-top:18px;position:relative;height:36px;">
-        <div style="position:absolute;inset:0;background:#062A4D;color:#FFFFFF;font-family:Poppins,Arial,sans-serif;font-weight:700;font-size:13px;letter-spacing:0.5px;text-align:center;display:flex;align-items:center;justify-content:center;clip-path:polygon(20px 0,calc(100% - 20px) 0,100% 50%,calc(100% - 20px) 100%,20px 100%,0 50%);">
-          ${esc(c.form_banner ?? "")}
-        </div>
-        <div style="position:absolute;left:0;top:0;bottom:0;width:30px;background:#B98A32;clip-path:polygon(0 0,100% 50%,0 100%);"></div>
-        <div style="position:absolute;right:0;top:0;bottom:0;width:30px;background:#B98A32;clip-path:polygon(100% 0,100% 100%,0 50%);"></div>
-      </div>
-
-      <!-- Fields grid -->
-      <div style="margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:22px 28px;font-size:13px;padding-bottom:90px;">
-        ${fields}
-      </div>
-
-      ${p.form.notes ? `<div style="margin-top:14px;font-size:12px;color:#0F172A;"><strong>Notes:</strong> ${esc(p.form.notes)}</div>` : ""}
-    </div>
-
-    <!-- Footer "Thank you" + corner ribbons -->
-    <div style="position:absolute;left:0;right:0;bottom:34px;text-align:center;">
-      <div style="display:inline-flex;align-items:center;gap:14px;">
-        <div style="width:80px;height:8px;background:linear-gradient(90deg,transparent,#B98A32);"></div>
-        <div style="font-family:Georgia,serif;font-size:34px;font-style:italic;color:#B98A32;line-height:1;">Thank you</div>
-        <div style="width:80px;height:8px;background:linear-gradient(90deg,#B98A32,transparent);"></div>
-      </div>
-      <div style="font-family:Poppins,Arial,sans-serif;font-size:11px;letter-spacing:7px;font-weight:700;margin-top:4px;color:#0F172A;">FOR CHOOSING US</div>
-    </div>
-    <div style="position:absolute;bottom:0;left:0;width:200px;height:40px;background:#062A4D;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%);"></div>
-    <div style="position:absolute;bottom:0;right:0;width:200px;height:40px;background:#062A4D;clip-path:polygon(22px 0,100% 0,100% 100%,0 100%);"></div>
-    <div style="position:absolute;bottom:32px;left:0;width:200px;height:6px;background:#B98A32;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);"></div>
-    <div style="position:absolute;bottom:32px;right:0;width:200px;height:6px;background:#B98A32;clip-path:polygon(14px 0,100% 0,100% 100%,0 100%);"></div>
-  </div>`;
 }
