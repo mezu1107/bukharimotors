@@ -220,7 +220,7 @@ function NewBooking() {
     if (!validateForm()) return;
     setSaving(true);
     setBusy("pdf");
-    const { data, error } = await supabase.from("bookings").insert([bookingPayload()]).select("booking_no").single();
+    const { data, error } = await supabase.from("bookings").insert([bookingPayload()]).select("id, booking_no").single();
     if (error || !data) {
       setSaving(false); setBusy(null);
       toast.error(error?.message ?? "Failed to save");
@@ -228,22 +228,8 @@ function NewBooking() {
     }
     toast.success(`Booking ${data.booking_no} created`);
     try {
-      const canvas = await renderSheetToCanvas(data.booking_no);
-      const { default: jsPDF } = await import("jspdf");
-      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const ratio = canvas.height / canvas.width;
-      const imgH = pageW * ratio;
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-      pdf.addImage(dataUrl, "JPEG", 0, 0, pageW, imgH);
-      const blob = pdf.output("blob");
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${data.booking_no}.pdf`;
-      a.rel = "noopener";
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      const { downloadBookingPdf } = await import("@/lib/booking-pdf");
+      await downloadBookingPdf(data.id);
       toast.success("Invoice PDF downloaded");
     } catch (e) {
       console.error(e);
