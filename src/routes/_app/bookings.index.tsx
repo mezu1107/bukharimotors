@@ -122,6 +122,10 @@ function BookingsPage() {
                     <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
+                  <Button variant="outline" size="sm" disabled={downloading === r.id} onClick={() => download(r.id)}>
+                    {downloading === r.id ? <Loader2 className="size-4 mr-1 animate-spin" /> : <FileDown className="size-4 mr-1" />}
+                    PDF
+                  </Button>
                   {r.client && (
                     <Button variant="outline" size="sm" onClick={() => openWhatsApp(r.client!.phone, shareBookingMessage({
                       bookingNo: r.booking_no, clientName: r.client!.full_name,
