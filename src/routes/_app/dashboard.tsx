@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
@@ -67,7 +67,7 @@ function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setError(null);
@@ -112,11 +112,11 @@ function Dashboard() {
       payments: (payments.data ?? []) as PaymentRow[],
     });
     setLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     if (!authLoading && user) load();
-  }, [authLoading, user?.id]);
+  }, [authLoading, user, load]);
 
   useEffect(() => {
     if (!user) return;
@@ -130,7 +130,7 @@ function Dashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id]);
+  }, [user, load]);
 
   const clientMap = useMemo(() => new Map(data.clients.map((c) => [c.id, c])), [data.clients]);
   const vehicleMap = useMemo(() => new Map(data.vehicles.map((v) => [v.id, v])), [data.vehicles]);
