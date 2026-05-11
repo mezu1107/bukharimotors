@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type Feature =
   | "pricing"
@@ -77,12 +76,11 @@ interface AssistInput {
 }
 
 export const aiAssist = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: AssistInput) => {
     if (!data || typeof data.feature !== "string") throw new Error("Invalid input");
     return data;
   })
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("AI service is not configured");
     const cfg = PROMPTS[data.feature] ?? { system: "You are a helpful assistant.", model: undefined };
