@@ -51,6 +51,18 @@ function BookingsPage() {
     const { error } = await supabase.from("bookings").delete().eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Deleted"); load(); }
   };
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const download = async (id: string) => {
+    setDownloading(id);
+    try {
+      const no = await downloadBookingPdf(id);
+      toast.success(`Downloaded ${no}.pdf`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "PDF download failed");
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   const filtered = rows.filter((r) => {
     const matchQ = `${r.booking_no} ${r.client?.full_name ?? ""} ${r.vehicle?.registration_no ?? ""}`.toLowerCase().includes(q.toLowerCase());
