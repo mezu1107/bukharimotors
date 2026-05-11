@@ -6,8 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Loader2, Plus, Search, Trash2, MessageCircle } from "lucide-react";
+import { FileText, Loader2, Plus, Search, Trash2, MessageCircle, FileDown } from "lucide-react";
 import { toast } from "sonner";
+import { downloadBookingPdf } from "@/lib/booking-pdf";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import { openWhatsApp, shareBookingMessage } from "@/lib/whatsapp";
 
