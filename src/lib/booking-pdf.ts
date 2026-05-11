@@ -86,7 +86,8 @@ function sheetHtml(p: SheetData) {
     ...p.customFields.filter(f => f.label).slice(0, 6).map(f => row(f.label, f.value)),
   ].join("");
 
-  return `<div style="width:794px;min-height:1123px;background:#FFFFFF;color:#0F172A;font-family:Inter,Arial,sans-serif;position:relative;box-sizing:border-box;overflow:hidden;">
+  return `<div class="bm-sheet-root" style="width:794px;min-height:1123px;background:#FFFFFF;color:#0F172A;font-family:Inter,Arial,sans-serif;position:relative;box-sizing:border-box;overflow:hidden;">
+    <style>.bm-sheet-root, .bm-sheet-root *{border-color:#E2E8F0 !important;outline-color:#E2E8F0 !important;text-decoration-color:#0F172A !important;-webkit-text-fill-color:currentColor !important;}</style>
     <div style="position:relative;height:30px;">
       <div style="position:absolute;top:0;left:0;width:55%;height:18px;background:#062A4D;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%);"></div>
       <div style="position:absolute;top:0;right:0;width:55%;height:18px;background:#062A4D;clip-path:polygon(22px 0,100% 0,100% 100%,0 100%);"></div>
